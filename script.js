@@ -55,7 +55,7 @@ function repairMainDOMStructure() {
                     </div>
                     <nav class="space-y-2">
                         <button id="btn-dashboard" onclick="loadPage('dashboard')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition font-medium cursor-pointer">📂 Dashboard</button>
-                        <button id="btn-inout" onclick="loadPage('inout')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition font-medium cursor-pointer">☕ Menu IN/OUT</button>
+                        <button id="btn-inout" onclick="loadPage('inout')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition font-medium cursor-pointer">☕ IN/OUT</button>
                         <button id="btn-manajemen" onclick="loadPage('manajemen')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition font-medium cursor-pointer">👥 Manajemen Staff</button>
                     </nav>
                 </div>
@@ -249,7 +249,7 @@ function loadPage(pageName) {
             
             if(pageTitle) {
                 if(pageName === 'dashboard') pageTitle.innerText = 'Dashboard';
-                else if(pageName === 'inout') pageTitle.innerText = 'Menu IN/OUT';
+                else if(pageName === 'inout') pageTitle.innerText = 'IN/OUT';
                 else if(pageName === 'manajemen') pageTitle.innerText = 'Manajemen Staff';
             }
 
