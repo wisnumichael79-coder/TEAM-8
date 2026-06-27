@@ -14,13 +14,13 @@ const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbylIb8B24pLxOK
 
 // SALIN KONFIGURASI DI BAWAH INI DARI FIREBASE CONSOLE ANDA
 const firebaseConfig = {
-  apiKey: "AIzaSy...", // <-- Masukkan API Key Firebase Anda di sini
-  authDomain: "team-8-internal.firebaseapp.com",
-  databaseURL: "https://team-8-internal-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "team-8-internal",
-  storageBucket: "team-8-internal.appspot.com",
-  messagingSenderId: "...",
-  appId: "..."
+  apiKey: "AIzaSyCGHA916aRAHTcBJwtk-6-nFUpzJ08BpQQ",
+  authDomain: "team8-absensi.firebaseapp.com",
+  databaseURL: "https://team-8-internal-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  projectId: "team8-absensi",
+  storageBucket: "team8-absensi.appspot.com",
+  messagingSenderId: "456282987112",
+  appId: "1:456282987112:web:ba8fce55db59985acb39dd"
 };
 
 // Inisialisasi Firebase
@@ -50,6 +50,7 @@ function repairMainDOMStructure() {
         }
 
         mainApp.innerHTML = `
+            <!-- Sidebar -->
             <aside class="w-64 bg-slate-900 text-white p-6 flex flex-col justify-between hidden md:flex">
                 <div class="space-y-6">
                     <div class="flex items-center space-x-3 px-2 py-3 border-b border-slate-800">
@@ -77,15 +78,19 @@ function repairMainDOMStructure() {
                 </div>
             </aside>
 
+            <!-- Konten Utama -->
             <div class="flex-1 flex flex-col min-w-0">
+                <!-- Topbar Header -->
                 <header class="bg-white border-b border-slate-200 p-4 flex justify-between items-center shadow-sm">
                     <h1 id="page-title" class="text-xl font-bold text-slate-800">Dashboard</h1>
                     <div class="flex items-center space-x-4">
                         <span class="text-sm font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">Loading...</span>
                     </div>
                 </header>
+                <!-- Area Inject Halaman -->
                 <main id="main-content" class="p-6 flex-1 overflow-y-auto">
-                    </main>
+                    <!-- HTML luar di-load di sini -->
+                </main>
             </div>
         `;
     }
@@ -470,7 +475,7 @@ function toggleCustomReasonInput() {
 }
 
 // ==========================================================
-// ONLINE ENGINE: LOG AKTIVITAS BREAK (FIREBASE + GOOGLE SHEETS)
+// ONLINE ENGINE: LOG AKTIVITAS BREAK (FIREBASE + GOOGLE SPREADSHEET)
 // ==========================================================
 function startBreak() {
     const nameSelect = document.getElementById('staff-name');
@@ -521,17 +526,8 @@ function startBreak() {
             isDone: false
         };
 
-        // 1. Simpan ke Firebase Realtime Database
+        // Simpan KE FIREBASE SAJA dulu agar status di web real-time terpantau aktif "Sedang Keluar"
         database.ref('breaks/' + rowId).set(dataPayload).then(() => {
-            
-            // 2. Kirim Data Awal Keluar (OUT) ke Google Sheets secara Real-time
-            fetch(GOOGLE_SHEET_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(dataPayload)
-            });
-
             // Reset Form UI
             nameSelect.value = ""; 
             if (reasonSelect) reasonSelect.value = "Rokok";
@@ -540,7 +536,7 @@ function startBreak() {
                 document.getElementById('custom-reason-container').classList.add('hidden');
             }
             
-            alert(`${staffName} mulai istirahat dengan alasan [${finalReason}]. Data tersinkron ke Firebase & Google Sheets.`);
+            alert(`${staffName} mulai istirahat dengan alasan [${finalReason}]. Status aktif dipantau di Firebase.`);
             renderBreakLogs();
         });
     });
@@ -557,13 +553,13 @@ function endBreak(rowId, startTimeTimestamp, staffName) {
     const seconds = totalSeconds % 60;
     const durationText = `${hours}j ${minutes}m ${seconds}d`;
 
-    // Ambil data lama dari Firebase terlebih dahulu untuk menyinkronkan data tanggal & shift asal
+    // Ambil data lama dari Firebase untuk menyelaraskan parameter Tanggal dan Shift asal
     database.ref('breaks/' + rowId).once('value').then((snapshot) => {
         if (!snapshot.exists()) return;
         
         const oldData = snapshot.val();
         
-        const updatedPayload = {
+        const completedPayload = {
             id: rowId,
             date: oldData.date,
             name: staffName,
@@ -574,22 +570,22 @@ function endBreak(rowId, startTimeTimestamp, staffName) {
             isDone: true
         };
 
-        // 1. Perbarui data selesai di Firebase
+        // 1. Perbarui data selesai di Firebase agar statusnya berubah jadi 'Done'
         database.ref('breaks/' + rowId).update({
             timeIn: timeInText,
             duration: durationText,
             isDone: true
         }).then(() => {
             
-            // 2. Kirim Data Pembaruan Masuk (IN) sebagai baris baru di Google Sheets
+            // 2. KIRIM DATA KE GOOGLE SPREADSHEET (Hanya ditembakkan SEKARANG saat data sudah lengkap)
             fetch(GOOGLE_SHEET_URL, {
                 method: "POST",
                 mode: "no-cors",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(updatedPayload)
+                body: JSON.stringify(completedPayload)
             });
 
-            alert(`${staffName} telah kembali dari istirahat. Riwayat masuk tercatat di Google Sheets.`);
+            alert(`${staffName} telah kembali. Seluruh riwayat durasi sukses terekam rapi ke Google Spreadsheet.`);
             renderBreakLogs();
         });
     });
