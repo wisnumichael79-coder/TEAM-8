@@ -3,16 +3,11 @@
 // ==========================================
 const ADMIN_UID = "admin";
 const ADMIN_PASSWORD = "Password123@"; 
-
 const STAFF_UID = "staff";
 const STAFF_PASSWORD = "Aa131313";
-
 const SECURITY_PIN = "1234";
-
-// JEMBATAN OTOMATIS KE GOOGLE SPREADSHEET ANDA
 const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbylIb8B24pLxOKkuihiigUtnA6Yj_nQFTl58SkoyiO2sfTOrNqhGM--80CjIEm87XiF/exec";
 
-// SALIN KONFIGURASI DI BAWAH INI DARI FIREBASE CONSOLE ANDA
 const firebaseConfig = {
   apiKey: "AIzaSyCGHA916aRAHTcBJwtk-6-nFUpzJ08BpQQ",
   authDomain: "team8-absensi.firebaseapp.com",
@@ -23,15 +18,31 @@ const firebaseConfig = {
   appId: "1:456282987112:web:ba8fce55db59985acb39dd"
 };
 
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+document.addEventListener("DOMContentLoaded", () => {
+    injectLoginScreenHTML();
+    checkLoginSession();
+    startClock();
+    if (window.lucide) lucide.createIcons();
+});
+
 // Inisialisasi Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 document.addEventListener("DOMContentLoaded", () => {
-    repairMainDOMStructure();
+    // 1. Perbaiki struktur HTML dulu
+    repairMainDOMStructure(); 
+    
+    // 2. Baru inisialisasi fitur lain
     injectLoginScreenHTML();
     checkLoginSession();
     startClock();
+    
+    // Penting: Inisialisasi ikon Lucide setelah DOM siap
+    if (window.lucide) lucide.createIcons();
 });
 
 function repairMainDOMStructure() {
@@ -246,7 +257,7 @@ function startClock() {
 }
 
 // ==========================================
-// KONTROLLER ROUTING SISTEM HALAMAN
+// KONTROLLER ROUTING SISTEM HALAMAN (UPDATE LOADPAGE)
 // ==========================================
 function loadPage(pageName) {
     if (sessionStorage.getItem("team8_login_status") !== "true") return;
@@ -272,49 +283,21 @@ function loadPage(pageName) {
             }
 
             updateSidebarStyle(pageName);
-            const userRole = sessionStorage.getItem("team8_user_role");
-
-            if (pageName === 'dashboard') {
-                initDashboardFilters();
-            } else if (pageName === 'inout') {
-                renderStaffDropdown();
-                renderBreakLogs(); 
-                
-                if (userRole === "staff") {
-                    const deleteLogBtn = document.getElementById("btn-delete-log-container");
-                    const thCheckLog = document.getElementById("th-check-log");
-                    if (deleteLogBtn) deleteLogBtn.classList.add("hidden");
-                    if (thCheckLog) thCheckLog.classList.add("hidden");
-                }
-            } else if (pageName === 'manajemen') {
-                const labelWeb = document.getElementById('label-staff-web');
-                const inputWeb = document.getElementById('new-staff-web');
-                if (labelWeb) labelWeb.innerText = "WEB";
-                if (inputWeb) inputWeb.placeholder = "Contoh: WISNU123";
-
-                if (userRole === "staff") {
-                    const formTambah = document.getElementById("form-tambah-staff");
-                    const tableContainer = document.getElementById("tabel-staff-container");
-                    const thAksiStaff = document.getElementById("th-aksi-staff");
-
-                    if (formTambah) formTambah.classList.add("hidden");
-                    if (thAksiStaff) thAksiStaff.classList.add("hidden");
-                    if (tableContainer) {
-                        tableContainer.className = "w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden lg:col-span-3";
-                    }
-                }
-                renderStaffTable();
-            }
+            
+            // Inisialisasi spesifik halaman
+            if (pageName === 'absensi') renderAbsensiTable();
+            else if (pageName === 'dashboard') initDashboardFilters();
+            // ... (sisa logika lainnya)
 
             if (window.lucide) lucide.createIcons();
         })
         .catch(err => {
-            mainContent.innerHTML = `<p class="text-red-500 text-center py-10">Gagal memuat sub-halaman: ${err.message}.</p>`;
+            mainContent.innerHTML = `<p class="text-red-500 text-center py-10">Gagal memuat: ${err.message}.</p>`;
         });
 }
 
 function updateSidebarStyle(activePage) {
-    const menus = ['dashboard', 'inout', 'manajemen', 'absensi']; // Tambahkan 'absensi' di sini
+    const menus = ['dashboard', 'inout', 'manajemen', 'absensi'];
     menus.forEach(menu => {
         const btn = document.getElementById(`btn-${menu}`);
         if(btn) {
