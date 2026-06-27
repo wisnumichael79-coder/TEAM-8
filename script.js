@@ -454,7 +454,7 @@ function toggleCustomReasonInput() {
 }
 
 // ==========================================
-// ONLINE ENGINE: LOG AKTIVITAS BREAK (FIREBASE)
+// ONLINE ENGINE: LOG AKTIVITAS BREAK (FIREBASE + GOOGLE SHEETS)
 // ==========================================
 function startBreak() {
     const nameSelect = document.getElementById('staff-name');
@@ -492,7 +492,7 @@ function startBreak() {
         const currentTimeText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const rowId = "break_" + now.getTime();
 
-        database.ref('breaks/' + rowId).set({
+        const dataPayload = {
             id: rowId,
             date: currentDateText,
             name: staffName,
@@ -503,7 +503,20 @@ function startBreak() {
             duration: "-",
             startTimestamp: now.getTime(),
             isDone: false
-        }).then(() => {
+        };
+
+        // 1. Simpan ke Firebase Realtime Database
+        database.ref('breaks/' + rowId).set(dataPayload).then(() => {
+            
+            // 2. Kirim Data Awal Keluar (OUT) ke Google Sheets secara Real-time
+            fetch(GOOGLE_SHEET_URL, {https://script.google.com/macros/s/AKfycbylIb8B24pLxOKkuihiigUtnA6Yj_nQFTl58SkoyiO2sfTOrNqhGM--80CjIEm87XiF/exec
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dataPayload)
+            });
+
+            // Reset Form UI
             nameSelect.value = ""; 
             if (reasonSelect) reasonSelect.value = "Rokok";
             if (customInput) customInput.value = "";
@@ -511,7 +524,7 @@ function startBreak() {
                 document.getElementById('custom-reason-container').classList.add('hidden');
             }
             
-            alert(`${staffName} mulai istirahat dengan alasan [${finalReason}].`);
+            alert(`${staffName} mulai istirahat dengan alasan [${finalReason}]. Data tersinkron ke Firebase & Google Sheets.`);
             renderBreakLogs();
         });
     });
@@ -528,13 +541,41 @@ function endBreak(rowId, startTimeTimestamp, staffName) {
     const seconds = totalSeconds % 60;
     const durationText = `${hours}j ${minutes}m ${seconds}d`;
 
-    database.ref('breaks/' + rowId).update({
-        timeIn: timeInText,
-        duration: durationText,
-        isDone: true
-    }).then(() => {
-        alert(`${staffName} telah kembali dari istirahat.`);
-        renderBreakLogs();
+    // Ambil data lama dari Firebase terlebih dahulu untuk mendapatkan data tanggal & shift asal
+    database.ref('breaks/' + rowId).once('value').then((snapshot) => {
+        if (!snapshot.exists()) return;
+        
+        const oldData = snapshot.val();
+        
+        const updatedPayload = {
+            id: rowId,
+            date: oldData.date,
+            name: staffName,
+            shift: oldData.shift,
+            timeOut: oldData.timeOut,
+            timeIn: timeInText,
+            duration: durationText,
+            isDone: true
+        };
+
+        // 1. Perbarui data selesai di Firebase
+        database.ref('breaks/' + rowId).update({
+            timeIn: timeInText,
+            duration: durationText,
+            isDone: true
+        }).then(() => {
+            
+            // 2. Kirim Data Pembaruan Masuk (IN) sebagai baris riwayat baru di Google Sheets
+            fetch(GOOGLE_SHEET_URL, {https://script.google.com/macros/s/AKfycbylIb8B24pLxOKkuihiigUtnA6Yj_nQFTl58SkoyiO2sfTOrNqhGM--80CjIEm87XiF/exec
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updatedPayload)
+            });
+
+            alert(`${staffName} telah kembali dari istirahat. Riwayat masuk tercatat di Google Sheets.`);
+            renderBreakLogs();
+        });
     });
 }
 
