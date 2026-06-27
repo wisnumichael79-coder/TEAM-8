@@ -823,3 +823,64 @@ function downloadDashboardExcel() {
     link.click();
     document.body.removeChild(link);
 }
+
+// ==========================================
+// FITUR ABSENSI BULANAN (Sesuai image_a86c88.png)
+// ==========================================
+
+function renderAbsensiTable() {
+    const tbody = document.getElementById('absensi-table-body');
+    if (!tbody) return;
+
+    const userRole = sessionStorage.getItem("team8_user_role");
+    const currentMonth = "2026-07"; // Bisa dibuat dinamis nantinya
+    const currentDay = "01"; 
+
+    tbody.innerHTML = `<tr><td colspan="2" class="p-4 text-center">Memuat Jadwal...</td></tr>`;
+
+    database.ref(`jadwal_absensi/${currentMonth}/${currentDay}`).once('value', (snapshot) => {
+        tbody.innerHTML = "";
+        
+        snapshot.forEach((child) => {
+            const staffKey = child.key; // Contoh: WISNU123_Dimas
+            const data = child.val();
+            const row = document.createElement('tr');
+            
+            let statusInput = "";
+            if (userRole === 'admin') {
+                // Dropdown untuk Admin
+                statusInput = `
+                    <select onchange="updateAbsensiStatus('${staffKey}', this.value)" class="p-1 border rounded">
+                        <option value="18:30" ${data.status === '18:30' ? 'selected' : ''}>18:30</option>
+                        <option value="RD" ${data.status === 'RD' ? 'selected' : ''}>RD</option>
+                        <option value="VLWOP" ${data.status === 'VLWOP' ? 'selected' : ''}>VLWOP</option>
+                        <option value="SLWOP" ${data.status === 'SLWOP' ? 'selected' : ''}>SLWOP</option>
+                        <option value="SL" ${data.status === 'SL' ? 'selected' : ''}>SL</option>
+                        <option value="VL" ${data.status === 'VL' ? 'selected' : ''}>VL</option>
+                    </select>`;
+            } else {
+                // Teks statis untuk Staff
+                statusInput = `<span class="font-bold text-slate-700">${data.status}</span>`;
+            }
+
+            row.innerHTML = `
+                <td class="p-3 border">${staffKey.split('_')[1]}</td>
+                <td class="p-3 border text-center">${statusInput}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    });
+}
+
+function updateAbsensiStatus(staffKey, newStatus) {
+    if (sessionStorage.getItem("team8_user_role") !== 'admin') {
+        alert("Hanya Admin yang bisa mengubah status!");
+        return;
+    }
+    
+    database.ref(`jadwal_absensi/2026-07/01/${staffKey}`).update({
+        status: newStatus
+    }).then(() => {
+        console.log("Status diperbarui ke: " + newStatus);
+    });
+}
