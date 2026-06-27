@@ -2,7 +2,7 @@
 // KONFIGURASI KREDENSIAL KEAMANAN & AKUN
 // ==========================================
 const ADMIN_UID = "admin";
-const ADMIN_PASSWORD = "Password123@";
+const ADMIN_PASSWORD = "Password123@"; 
 
 const STAFF_UID = "staff";
 const STAFF_PASSWORD = "Aa131313";
@@ -76,8 +76,8 @@ function injectLoginScreenHTML() {
                 <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-800">TEAM 8 INTERNAL</h2>
-                <p class="text-sm text-slate-400 mt-1">Silakan masuk menggunakan akun Anda</p>
+                <h2 class="text-2xl font-bold text-slate-800">TEAM 8</h2>
+                <p class="text-sm text-slate-400 mt-1">SILAHKAN MASUK</p>
             </div>
             
             <div class="space-y-4 text-left mb-6">
@@ -247,6 +247,12 @@ function loadPage(pageName) {
                     if (thCheckLog) thCheckLog.classList.add("hidden");
                 }
             } else if (pageName === 'manajemen') {
+                // Modifikasi placeholder dan label manajemen input di level JS (jika di-render dinamis)
+                const labelWeb = document.getElementById('label-staff-web');
+                const inputWeb = document.getElementById('new-staff-web');
+                if (labelWeb) labelWeb.innerText = "WEB";
+                if (inputWeb) inputWeb.placeholder = "Contoh: WISNU123";
+
                 if (userRole === "staff") {
                     const formTambah = document.getElementById("form-tambah-staff");
                     const tableContainer = document.getElementById("tabel-staff-container");
@@ -323,6 +329,10 @@ function renderStaffTable() {
     const staffList = getStaffFromStorage();
     const userRole = sessionStorage.getItem("team8_user_role");
     tableBody.innerHTML = "";
+
+    // Sesuaikan header tabel Manajemen Staff jika elemen DOM tersedia
+    const thWebHeader = document.getElementById('th-staff-web-header');
+    if (thWebHeader) thWebHeader.innerText = "WEB";
 
     if (staffList.length === 0) {
         const maxCol = userRole === "staff" ? 4 : 5;
@@ -604,9 +614,9 @@ function deleteSelectedLogs() {
 }
 
 // ==========================================
-// KONTROLLER CORE LOGIKA DASHBOARD (RANGE TANGGAL & EXCEL)
+// KONTROLLER LOGIKA DASHBOARD (RANGE TANGGAL & EXCEL)
 // ==========================================
-let currentFilteredDataGlobal = []; // Menyimpan data terfilter untuk diunduh ke Excel
+let currentFilteredDataGlobal = [];
 
 function initDashboardFilters() {
     const fromDateInput = document.getElementById('dash-filter-date-from');
@@ -615,7 +625,6 @@ function initDashboardFilters() {
     const btnExcelContainer = document.getElementById('excel-download-container');
     const userRole = sessionStorage.getItem("team8_user_role");
 
-    // Tampilkan tombol unduh Excel hanya untuk ADMIN
     if (btnExcelContainer) {
         if (userRole === "admin") {
             btnExcelContainer.classList.remove("hidden");
@@ -647,7 +656,6 @@ function initDashboardFilters() {
 
 function parseDateTime(dateStr, timeStr) {
     const [day, month, year] = dateStr.split('/').map(Number);
-    // Mengakomodasi format jam dengan tanda titik (.) atau titik dua (:)
     const standardizedTime = timeStr.replace(/\./g, ':');
     const [hours, minutes, seconds] = standardizedTime.split(':').map(Number);
     return new Date(year, month - 1, day, hours, minutes, seconds || 0);
@@ -664,11 +672,9 @@ function renderDashboard() {
 
     if (!tableBody || !fromDateVal || !toDateVal) return;
 
-    // Set batas awal: Tanggal 'From' jam 06:30 pagi
     const [fYear, fMonth, fDay] = fromDateVal.split('-').map(Number);
     const shiftStartLimit = new Date(fYear, fMonth - 1, fDay, 6, 30, 0);
     
-    // Set batas akhir: Tanggal 'To' + 1 hari jam 06:30 pagi
     const [tYear, tMonth, tDay] = toDateVal.split('-').map(Number);
     const shiftEndLimit = new Date(tYear, tMonth - 1, tDay, 6, 30, 0);
     shiftEndLimit.setDate(shiftEndLimit.getDate() + 1);
@@ -708,7 +714,6 @@ function renderDashboard() {
     if (currentFilteredDataGlobal.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-400">Tidak ada riwayat istirahat staff pada rentang tanggal filter ini.</td></tr>`;
     } else {
-        // Tampilkan data urutan terbaru di atas
         currentFilteredDataGlobal.slice().reverse().forEach(item => {
             const row = document.createElement('tr');
             row.className = "hover:bg-slate-50 transition";
@@ -737,9 +742,6 @@ function renderDashboard() {
     }
 }
 
-// ==========================================
-// FUNGSIONALITAS DOWNLOAD EXCEL (CSV FORMAT)
-// ==========================================
 function downloadDashboardExcel() {
     if (sessionStorage.getItem("team8_user_role") !== "admin") {
         alert("Akses Ditolak! Hanya Administrator yang dapat mendownload laporan excel.");
@@ -751,11 +753,9 @@ function downloadDashboardExcel() {
         return;
     }
 
-    // Header Kolom Excel
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += "Tanggal,Nama Staff,Shift,Jam Keluar (OUT),Jam Masuk (IN),Durasi Istirahat\n";
 
-    // Isi Baris Data
     currentFilteredDataGlobal.forEach(item => {
         const rowData = [
             item.date,
@@ -768,7 +768,6 @@ function downloadDashboardExcel() {
         csvContent += rowData.join(",") + "\n";
     });
 
-    // Proses Download File oleh Browser Berformat .csv (Dapat dibuka langsung via Microsoft Excel)
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     
