@@ -1,5 +1,5 @@
 // ==========================================
-// KONFIGURASI KREDENSIAL KEAMANAN & AKUN
+// KONFIGURASI KREDENSIAL KEAMANAN & FIREBASE
 // ==========================================
 const ADMIN_UID = "admin";
 const ADMIN_PASSWORD = "Password123@"; 
@@ -9,8 +9,22 @@ const STAFF_PASSWORD = "Aa131313";
 
 const SECURITY_PIN = "1234";
 
+// TEMPELKAN KODE KONFIGURASI FIREBASE ANDA DI SINI
+const firebaseConfig = {
+  apiKey: "AIzaSyCGHA916aRAHTcBJwtk-6-nFUpzJ08BpQQ",
+  authDomain: "team8-absensi.firebaseapp.com",
+  databaseURL: "https://team-8-internal-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  projectId: "team8-absensi",
+  storageBucket: "team8-absensi.appspot.com",
+  messagingSenderId: "...",
+  appId: "..."
+};
+
+// Jalankan Inisialisasi Firebase Koneksi Cloud
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
 document.addEventListener("DOMContentLoaded", () => {
-    // Pastikan struktur dasar aplikasi ada sebelum memproses session
     repairMainDOMStructure();
     injectLoginScreenHTML();
     checkLoginSession();
@@ -18,11 +32,11 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ==========================================
-// PENGAMAN: PERBAIKI STRUKTUR DOM JIKA HILANG (ANTI LAYAR PUTIH)
+// PENGAMAN: PERBAIKI STRUKTUR DOM JIKA HILANG
 // ==========================================
 function repairMainDOMStructure() {
     if (!document.getElementById("main-content")) {
-        console.warn("Sistem mendeteksi id='main-content' hilang di index.html. Memperbaiki otomatis...");
+        console.warn("Sistem mendeteksi id='main-content' hilang. Memperbaiki otomatis...");
         
         let mainApp = document.getElementById("main-app");
         if (!mainApp) {
@@ -204,6 +218,16 @@ function handleLogout() {
     }
 }
 
+function startClock() {
+    setInterval(() => {
+        const clockContainer = document.getElementById('live-clock');
+        if (clockContainer) {
+            const now = new Date();
+            clockContainer.innerText = now.toLocaleTimeString('id-ID');
+        }
+    }, 1000);
+}
+
 // ==========================================
 // KONTROLLER ROUTING SISTEM HALAMAN
 // ==========================================
@@ -230,12 +254,10 @@ function loadPage(pageName) {
             }
 
             updateSidebarStyle(pageName);
-            
             const userRole = sessionStorage.getItem("team8_user_role");
 
             if (pageName === 'dashboard') {
                 initDashboardFilters();
-                renderDashboard();
             } else if (pageName === 'inout') {
                 renderStaffDropdown();
                 renderBreakLogs(); 
@@ -247,7 +269,6 @@ function loadPage(pageName) {
                     if (thCheckLog) thCheckLog.classList.add("hidden");
                 }
             } else if (pageName === 'manajemen') {
-                // Modifikasi placeholder dan label manajemen input di level JS (jika di-render dinamis)
                 const labelWeb = document.getElementById('label-staff-web');
                 const inputWeb = document.getElementById('new-staff-web');
                 if (labelWeb) labelWeb.innerText = "WEB";
@@ -260,7 +281,6 @@ function loadPage(pageName) {
 
                     if (formTambah) formTambah.classList.add("hidden");
                     if (thAksiStaff) thAksiStaff.classList.add("hidden");
-                    
                     if (tableContainer) {
                         tableContainer.className = "w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden lg:col-span-3";
                     }
@@ -271,7 +291,7 @@ function loadPage(pageName) {
             if (window.lucide) lucide.createIcons();
         })
         .catch(err => {
-            mainContent.innerHTML = `<p class="text-red-500 text-center py-10">Gagal memuat sub-halaman: ${err.message}. Pastikan file '${pageName}.html' berada di folder yang sama.</p>`;
+            mainContent.innerHTML = `<p class="text-red-500 text-center py-10">Gagal memuat sub-halaman: ${err.message}.</p>`;
         });
 }
 
@@ -280,45 +300,34 @@ function updateSidebarStyle(activePage) {
     menus.forEach(menu => {
         const btn = document.getElementById(`btn-${menu}`);
         if(btn) {
-            if(menu === activePage) {
-                btn.className = "flex items-center space-x-3 w-full p-3 rounded-lg bg-blue-600 text-white font-medium transition";
-            } else {
-                btn.className = "flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition";
-            }
+            btn.className = menu === activePage
+                ? "flex items-center space-x-3 w-full p-3 rounded-lg bg-blue-600 text-white font-medium transition"
+                : "flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition";
         }
     });
 }
 
-function startClock() {
-    setInterval(() => {
-        const clockContainer = document.getElementById('live-clock');
-        if (clockContainer) {
-            const now = new Date();
-            clockContainer.innerText = now.toLocaleTimeString('id-ID');
-        }
-    }, 1000);
-}
-
 // ==========================================
-// LOGIKA DATABASE STAFF (LOCALSTORAGE)
+// ONLINE ENGINE: MANAJEMEN STAFF (FIREBASE)
 // ==========================================
-function getStaffFromStorage() {
-    const staff = localStorage.getItem('team8_staff');
-    return staff ? JSON.parse(staff) : [];
-}
-
 function renderStaffDropdown() {
     const dropdown = document.getElementById('staff-name');
     if (!dropdown) return;
 
-    const staffList = getStaffFromStorage();
-    dropdown.innerHTML = '<option value="" disabled selected>-- Pilih Anggota Staff --</option>';
+    dropdown.innerHTML = '<option value="" disabled selected>-- Memuat Staff... --</option>';
     
-    staffList.forEach(staff => {
-        const opt = document.createElement('option');
-        opt.value = staff.name;
-        opt.innerText = `${staff.name} (${staff.role}) - Shift ${staff.shift}`;
-        dropdown.appendChild(opt);
+    database.ref('staff').once('value', (snapshot) => {
+        dropdown.innerHTML = '<option value="" disabled selected>-- Pilih Anggota Staff --</option>';
+        
+        if (!snapshot.exists()) return;
+
+        snapshot.forEach((child) => {
+            const staff = child.val();
+            const opt = document.createElement('option');
+            opt.value = staff.name;
+            opt.innerText = `${staff.name} (${staff.role}) - Shift ${staff.shift}`;
+            dropdown.appendChild(opt);
+        });
     });
 }
 
@@ -326,234 +335,148 @@ function renderStaffTable() {
     const tableBody = document.getElementById('staff-table-body');
     if (!tableBody) return;
 
-    const staffList = getStaffFromStorage();
     const userRole = sessionStorage.getItem("team8_user_role");
-    tableBody.innerHTML = "";
+    tableBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400">Sinkronisasi Cloud Firebase...</td></tr>`;
 
-    // Sesuaikan header tabel Manajemen Staff jika elemen DOM tersedia
-    const thWebHeader = document.getElementById('th-staff-web-header');
-    if (thWebHeader) thWebHeader.innerText = "WEB";
+    database.ref('staff').once('value', (snapshot) => {
+        tableBody.innerHTML = "";
+        const thWebHeader = document.getElementById('th-staff-web-header');
+        if (thWebHeader) thWebHeader.innerText = "WEB";
 
-    if (staffList.length === 0) {
-        const maxCol = userRole === "staff" ? 4 : 5;
-        tableBody.innerHTML = `<tr><td colspan="${maxCol}" class="p-8 text-center text-gray-400">Belum ada staff terdaftar.</td></tr>`;
-        return;
-    }
-
-    staffList.forEach((staff, index) => {
-        const row = document.createElement('tr');
-        row.className = "hover:bg-slate-50 transition";
-        
-        const shiftBadgeClass = staff.shift === 'Pagi'
-            ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
-            : 'bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium';
-
-        let webDisplayHtml = `<span class="text-gray-400">-</span>`;
-        if (staff.web && staff.web !== "") {
-            webDisplayHtml = `<span class="text-slate-600 font-medium">${staff.web}</span>`;
+        if (!snapshot.exists()) {
+            const maxCol = userRole === "staff" ? 4 : 5;
+            tableBody.innerHTML = `<tr><td colspan="${maxCol}" class="p-8 text-center text-gray-400">Belum ada staff terdaftar.</td></tr>`;
+            return;
         }
 
-        let tdAksiHtml = "";
-        if (userRole !== "staff") {
-            tdAksiHtml = `
-                <td class="p-4 text-center">
-                    <button onclick="deleteStaff(${index})" class="text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer">
-                        Hapus
-                    </button>
-                </td>
+        snapshot.forEach((childSnapshot) => {
+            const staffId = childSnapshot.key;
+            const staff = childSnapshot.val();
+            
+            const row = document.createElement('tr');
+            row.className = "hover:bg-slate-50 transition";
+            
+            const shiftBadgeClass = staff.shift === 'Pagi'
+                ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
+                : 'bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium';
+
+            let webDisplayHtml = staff.web ? `<span class="text-slate-600 font-medium">${staff.web}</span>` : `<span class="text-gray-400">-</span>`;
+
+            let tdAksiHtml = "";
+            if (userRole !== "staff") {
+                tdAksiHtml = `
+                    <td class="p-4 text-center">
+                        <button onclick="deleteStaffOnline('${staffId}', '${staff.name}')" class="text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer">
+                            Hapus
+                        </button>
+                    </td>
+                `;
+            }
+
+            row.innerHTML = `
+                <td class="p-4 font-medium text-gray-900">${staff.name}</td>
+                <td class="p-4 text-gray-500">${staff.role}</td>
+                <td class="p-4"><span class="${shiftBadgeClass}">${staff.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
+                <td class="p-4">${webDisplayHtml}</td>
+                ${tdAksiHtml}
             `;
-        }
-
-        row.innerHTML = `
-            <td class="p-4 font-medium text-gray-900">${staff.name}</td>
-            <td class="p-4 text-gray-500">${staff.role}</td>
-            <td class="p-4"><span class="${shiftBadgeClass}">${staff.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
-            <td class="p-4">${webDisplayHtml}</td>
-            ${tdAksiHtml}
-        `;
-        tableBody.appendChild(row);
+            tableBody.appendChild(row);
+        });
     });
 }
 
 function addStaff() {
-    const nameInput = document.getElementById('new-staff-name');
-    const roleInput = document.getElementById('new-staff-role');
-    const webInput = document.getElementById('new-staff-web');
-    const shiftSelect = document.getElementById('new-staff-shift');
-    
-    const name = nameInput.value.trim();
-    const role = roleInput.value.trim();
-    const web = webInput ? webInput.value.trim() : "";
-    const shift = shiftSelect.value;
+    const name = document.getElementById('new-staff-name').value.trim();
+    const role = document.getElementById('new-staff-role').value.trim();
+    const web = document.getElementById('new-staff-web').value.trim();
+    const shift = document.getElementById('new-staff-shift').value;
 
     if (name === "" || role === "") {
         alert("Kolom nama dan jabatan wajib diisi!");
         return;
     }
 
-    const staffList = getStaffFromStorage();
-    const isExist = staffList.some(s => s.name.toLowerCase() === name.toLowerCase());
-    if(isExist) {
-        alert("Nama staff tersebut sudah terdaftar!");
-        return;
-    }
+    database.ref('staff').once('value', (snapshot) => {
+        let isExist = false;
+        if (snapshot.exists()) {
+            snapshot.forEach(child => {
+                if (child.val().name.toLowerCase() === name.toLowerCase()) isExist = true;
+            });
+        }
 
-    staffList.push({ name: name, role: role, web: web, shift: shift });
-    localStorage.setItem('team8_staff', JSON.stringify(staffList));
+        if (isExist) {
+            alert("Nama staff tersebut sudah terdaftar di sistem!");
+            return;
+        }
 
-    nameInput.value = "";
-    roleInput.value = "";
-    if(webInput) webInput.value = "";
-    shiftSelect.value = "Pagi";
-    
-    alert(`Sukses menambahkan ${name} dengan Shift ${shift}.`);
-    renderStaffTable();
-}
-
-function deleteStaff(index) {
-    if (sessionStorage.getItem("team8_user_role") === "staff") {
-        alert("Akses Ditolak!");
-        return;
-    }
-
-    const staffList = getStaffFromStorage();
-    const targetStaff = staffList[index];
-
-    if (confirm(`Apakah Anda yakin ingin menghapus ${targetStaff.name}?`)) {
-        const userPin = prompt(`Masukkan PIN Keamanan untuk menghapus staff:`);
-        if (userPin === null) return;
-
-        if (userPin === SECURITY_PIN) {
-            staffList.splice(index, 1);
-            localStorage.setItem('team8_staff', JSON.stringify(staffList));
-            alert("Staff berhasil dihapus dari sistem.");
+        database.ref('staff').push({ name, role, web, shift }).then(() => {
+            document.getElementById('new-staff-name').value = "";
+            document.getElementById('new-staff-role').value = "";
+            document.getElementById('new-staff-web').value = "";
+            alert(`Sukses menambahkan ${name} ke database online.`);
             renderStaffTable();
+        });
+    });
+}
+
+function deleteStaffOnline(staffId, staffName) {
+    if (sessionStorage.getItem("team8_user_role") === "staff") return;
+
+    if (confirm(`Apakah Anda yakin ingin menghapus ${staffName}?`)) {
+        const userPin = prompt(`Masukkan PIN Keamanan untuk menghapus staff:`);
+        if (userPin === SECURITY_PIN) {
+            database.ref('staff/' + staffId).remove().then(() => {
+                alert("Staff berhasil dihapus dari cloud database.");
+                renderStaffTable();
+            });
         } else {
-            alert("Gagal menghapus! PIN Keamanan yang Anda masukkan SALAH.");
+            alert("PIN Keamanan SALAH.");
         }
     }
 }
 
 // ==========================================
-// DATABASE RIWAYAT BREAK (LOCALSTORAGE)
+// ONLINE ENGINE: LOG AKTIVITAS BREAK (FIREBASE)
 // ==========================================
-function getBreaksFromStorage() {
-    const breaks = localStorage.getItem('team8_breaks');
-    return breaks ? JSON.parse(breaks) : [];
-}
-
-function renderBreakLogs() {
-    const tableBody = document.getElementById('log-table-body');
-    if (!tableBody) return;
-
-    const breakList = getBreaksFromStorage();
-    const userRole = sessionStorage.getItem("team8_user_role");
-    tableBody.innerHTML = "";
-
-    const checkAllBox = document.getElementById('check-all-logs');
-    if (checkAllBox) checkAllBox.checked = false;
-
-    if (breakList.length === 0) {
-        const maxCol = userRole === "staff" ? 7 : 8;
-        tableBody.innerHTML = `<tr id="empty-row"><td colspan="${maxCol}" class="p-8 text-center text-gray-400">Belum ada aktivitas istirahat tercatat.</td></tr>`;
-        return;
-    }
-
-    breakList.slice().reverse().forEach((item) => {
-        const row = document.createElement('tr');
-        row.id = item.id;
-        row.className = "hover:bg-slate-50 transition";
-
-        const shiftBadgeClass = item.shift === 'Pagi'
-            ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
-            : 'bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium';
-
-        let actionColumnHtml = "";
-        let timeInClass = "p-4 text-gray-400 font-mono";
-        let durationClass = "p-4 text-gray-400 font-medium";
-
-        if (item.isDone) {
-            timeInClass = "p-4 text-emerald-600 font-mono font-semibold";
-            durationClass = "p-4 text-blue-600 font-bold";
-            actionColumnHtml = `<span class="text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1">Done</span>`;
-        } else {
-            actionColumnHtml = `
-                <button onclick="endBreak('${item.id}', ${item.startTimestamp}, '${item.name}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition cursor-pointer">
-                    MASUK BREAK (IN)
-                </button>
-            `;
-        }
-
-        let tdCheckboxHtml = "";
-        if (userRole !== "staff") {
-            tdCheckboxHtml = `
-                <td class="p-4 text-center">
-                    <input type="checkbox" name="log-select" value="${item.id}" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                </td>
-            `;
-        }
-
-        row.innerHTML = `
-            ${tdCheckboxHtml}
-            <td class="p-4 text-gray-500 font-mono">${item.date}</td>
-            <td class="p-4 font-medium text-gray-900">${item.name}</td>
-            <td class="p-4"><span class="${shiftBadgeClass}">${item.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
-            <td class="p-4 text-amber-600 font-mono font-semibold">${item.timeOut}</td>
-            <td class="${timeInClass}" id="time-in-${item.id}">${item.timeIn}</td>
-            <td class="${durationClass}" id="duration-${item.id}">${item.duration}</td>
-            <td class="p-4 text-center" id="action-${item.id}">${actionColumnHtml}</td>
-        `;
-        tableBody.appendChild(row);
-    });
-}
-
-function toggleSelectAllLogs(masterCheckbox) {
-    const checkboxes = document.querySelectorAll('input[name="log-select"]');
-    checkboxes.forEach(cb => {
-        cb.checked = masterCheckbox.checked;
-    });
-}
-
 function startBreak() {
     const nameSelect = document.getElementById('staff-name');
     if(!nameSelect) return;
-    
     const staffName = nameSelect.value;
 
-    if (!staffName || staffName === "") {
+    if (!staffName) {
         alert("Silakan pilih nama Staff terlebih dahulu!");
         return;
     }
 
-    const staffList = getStaffFromStorage();
-    const currentStaffData = staffList.find(s => s.name === staffName);
-    const staffShift = currentStaffData ? currentStaffData.shift : "Pagi";
+    database.ref('staff').once('value', (snapshot) => {
+        let staffShift = "Pagi";
+        if (snapshot.exists()) {
+            snapshot.forEach(child => {
+                if (child.val().name === staffName) staffShift = child.val().shift;
+            });
+        }
 
-    const now = new Date();
-    const currentDateText = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const currentTimeText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    
-    const rowId = "break_" + now.getTime();
+        const now = new Date();
+        const currentDateText = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const currentTimeText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const rowId = "break_" + now.getTime();
 
-    const breakList = getBreaksFromStorage();
-    const newRecord = {
-        id: rowId,
-        date: currentDateText,
-        name: staffName,
-        shift: staffShift,
-        timeOut: currentTimeText,
-        timeIn: "-",
-        duration: "-",
-        startTimestamp: now.getTime(),
-        isDone: false
-    };
-    
-    breakList.push(newRecord);
-    localStorage.setItem('team8_breaks', JSON.stringify(breakList));
-
-    nameSelect.value = ""; 
-    alert(`${staffName} mulai istirahat pada jam ${currentTimeText}`);
-    renderBreakLogs();
+        database.ref('breaks/' + rowId).set({
+            id: rowId,
+            date: currentDateText,
+            name: staffName,
+            shift: staffShift,
+            timeOut: currentTimeText,
+            timeIn: "-",
+            duration: "-",
+            startTimestamp: now.getTime(),
+            isDone: false
+        }).then(() => {
+            nameSelect.value = ""; 
+            alert(`${staffName} mulai istirahat (Data tersimpan di Firebase).`);
+            renderBreakLogs();
+        });
+    });
 }
 
 function endBreak(rowId, startTimeTimestamp, staffName) {
@@ -567,54 +490,106 @@ function endBreak(rowId, startTimeTimestamp, staffName) {
     const seconds = totalSeconds % 60;
     const durationText = `${hours}j ${minutes}m ${seconds}d`;
 
-    const breakList = getBreaksFromStorage();
-    const recordIndex = breakList.findIndex(item => item.id === rowId);
-    
-    if (recordIndex !== -1) {
-        breakList[recordIndex].timeIn = timeInText;
-        breakList[recordIndex].duration = durationText;
-        breakList[recordIndex].isDone = true;
-        localStorage.setItem('team8_breaks', JSON.stringify(breakList));
-    }
+    database.ref('breaks/' + rowId).update({
+        timeIn: timeInText,
+        duration: durationText,
+        isDone: true
+    }).then(() => {
+        alert(`${staffName} telah kembali dari istirahat.`);
+        renderBreakLogs();
+    });
+}
 
-    alert(`${staffName} telah kembali dari istirahat. Total durasi break: ${durationText}`);
-    renderBreakLogs();
+function renderBreakLogs() {
+    const tableBody = document.getElementById('log-table-body');
+    if (!tableBody) return;
+
+    const userRole = sessionStorage.getItem("team8_user_role");
+    tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-gray-400">Sinkronisasi riwayat cloud...</td></tr>`;
+
+    database.ref('breaks').once('value', (snapshot) => {
+        tableBody.innerHTML = "";
+        
+        if (!snapshot.exists()) {
+            const maxCol = userRole === "staff" ? 7 : 8;
+            tableBody.innerHTML = `<tr id="empty-row"><td colspan="${maxCol}" class="p-8 text-center text-gray-400">Belum ada aktivitas istirahat tercatat.</td></tr>`;
+            return;
+        }
+
+        let logsArray = [];
+        snapshot.forEach(child => {
+            logsArray.push(child.val());
+        });
+
+        logsArray.reverse().forEach((item) => {
+            const row = document.createElement('tr');
+            row.id = item.id;
+            row.className = "hover:bg-slate-50 transition";
+
+            const shiftBadgeClass = item.shift === 'Pagi'
+                ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
+                : 'bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium';
+
+            let actionColumnHtml = item.isDone
+                ? `<span class="text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1">Done</span>`
+                : `<button onclick="endBreak('${item.id}', ${item.startTimestamp}, '${item.name}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition cursor-pointer">MASUK BREAK (IN)</button>`;
+
+            let tdCheckboxHtml = "";
+            if (userRole !== "staff") {
+                tdCheckboxHtml = `
+                    <td class="p-4 text-center">
+                        <input type="checkbox" name="log-select" value="${item.id}" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    </td>
+                `;
+            }
+
+            row.innerHTML = `
+                ${tdCheckboxHtml}
+                <td class="p-4 text-gray-500 font-mono">${item.date}</td>
+                <td class="p-4 font-medium text-gray-900">${item.name}</td>
+                <td class="p-4"><span class="${shiftBadgeClass}">${item.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
+                <td class="p-4 text-amber-600 font-mono font-semibold">${item.timeOut}</td>
+                <td class="p-4 ${item.isDone ? 'text-emerald-600 font-semibold' : 'text-gray-400'} font-mono">${item.timeIn}</td>
+                <td class="p-4 ${item.isDone ? 'text-blue-600 font-bold' : 'text-gray-400'}">${item.duration}</td>
+                <td class="p-4 text-center" id="action-${item.id}">${actionColumnHtml}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    });
+}
+
+function toggleSelectAllLogs(masterCheckbox) {
+    document.querySelectorAll('input[name="log-select"]').forEach(cb => {
+        cb.checked = masterCheckbox.checked;
+    });
 }
 
 function deleteSelectedLogs() {
-    if (sessionStorage.getItem("team8_user_role") === "staff") {
-        alert("Akses Ditolak!");
-        return;
-    }
+    if (sessionStorage.getItem("team8_user_role") === "staff") return;
 
     const checkboxes = document.querySelectorAll('input[name="log-select"]:checked');
-    
     if (checkboxes.length === 0) {
-        alert("Silakan centang minimal satu baris riwayat yang ingin dihapus!");
+        alert("Silakan centang minimal satu baris riwayat!");
         return;
     }
 
-    if (confirm(`Apakah Anda yakin ingin menghapus ${checkboxes.length} riwayat istirahat terpilih?`)) {
-        const userPin = prompt("Masukkan PIN Keamanan untuk menghapus riwayat log:");
-        if (userPin === null) return;
-
+    if (confirm(`Apakah Anda yakin ingin menghapus ${checkboxes.length} log terpilih secara permanen di Firebase?`)) {
+        const userPin = prompt("Masukkan PIN Keamanan:");
         if (userPin === SECURITY_PIN) {
-            const idsToDelete = Array.from(checkboxes).map(cb => cb.value);
-            let breakList = getBreaksFromStorage();
+            const promises = Array.from(checkboxes).map(cb => database.ref('breaks/' + cb.value).remove());
             
-            breakList = breakList.filter(item => !idsToDelete.includes(item.id));
-            localStorage.setItem('team8_breaks', JSON.stringify(breakList));
-            
-            alert("Data riwayat log terpilih berhasil dihapus.");
-            renderBreakLogs();
+            Promise.all(promises).then(() => {
+                alert("Data riwayat log terpilih berhasil dihapus dari cloud.");
+                renderBreakLogs();
+            });
         } else {
-            alert("Gagal menghapus log! PIN Keamanan yang Anda masukkan SALAH.");
+            alert("PIN Keamanan SALAH.");
         }
     }
 }
 
 // ==========================================
-// KONTROLLER LOGIKA DASHBOARD (RANGE TANGGAL & EXCEL)
+// KONTROLLER LOGIKA DASHBOARD (FIREBASE RANGE MAP)
 // ==========================================
 let currentFilteredDataGlobal = [];
 
@@ -626,32 +601,29 @@ function initDashboardFilters() {
     const userRole = sessionStorage.getItem("team8_user_role");
 
     if (btnExcelContainer) {
-        if (userRole === "admin") {
-            btnExcelContainer.classList.remove("hidden");
-        } else {
-            btnExcelContainer.classList.add("hidden");
-        }
+        userRole === "admin" ? btnExcelContainer.classList.remove("hidden") : btnExcelContainer.classList.add("hidden");
     }
 
     const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    const todayStr = `${year}-${month}-${day}`;
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     if (fromDateInput && !fromDateInput.value) fromDateInput.value = todayStr;
     if (toDateInput && !toDateInput.value) toDateInput.value = todayStr;
 
     if (staffSelect) {
-        const staffList = getStaffFromStorage();
         staffSelect.innerHTML = '<option value="ALL">-- Tampilkan Semua Staff --</option>';
-        staffList.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.name;
-            opt.innerText = s.name;
-            staffSelect.appendChild(opt);
+        database.ref('staff').once('value', (snapshot) => {
+            if (snapshot.exists()) {
+                snapshot.forEach(child => {
+                    const opt = document.createElement('option');
+                    opt.value = child.val().name;
+                    opt.innerText = child.val().name;
+                    staffSelect.appendChild(opt);
+                });
+            }
         });
     }
+    renderDashboard();
 }
 
 function parseDateTime(dateStr, timeStr) {
@@ -683,101 +655,77 @@ function renderDashboard() {
         periodBadge.innerText = `Rentang Shift: ${shiftStartLimit.toLocaleDateString('id-ID')} (06:30) s/d ${shiftEndLimit.toLocaleDateString('id-ID')} (06:30)`;
     }
 
-    const breakList = getBreaksFromStorage();
-    tableBody.innerHTML = "";
-    
-    currentFilteredDataGlobal = [];
-    let totalSecondsAccumulated = 0;
+    tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-400">Menghitung data online...</td></tr>`;
 
-    breakList.forEach(item => {
-        if (filterStaffVal !== "ALL" && item.name !== filterStaffVal) return;
+    database.ref('breaks').once('value', (snapshot) => {
+        tableBody.innerHTML = "";
+        currentFilteredDataGlobal = [];
+        let totalSecondsAccumulated = 0;
 
-        const itemActualDate = parseDateTime(item.date, item.timeOut);
+        if (snapshot.exists()) {
+            snapshot.forEach(child => {
+                const item = child.val();
+                if (filterStaffVal !== "ALL" && item.name !== filterStaffVal) return;
 
-        if (itemActualDate >= shiftStartLimit && itemActualDate < shiftEndLimit) {
-            currentFilteredDataGlobal.push(item);
-            
-            if (item.isDone && item.duration !== "-") {
-                const matchHours = item.duration.match(/(\d+)j/);
-                const matchMinutes = item.duration.match(/(\d+)m/);
-                const matchSeconds = item.duration.match(/(\d+)d/);
+                const itemActualDate = parseDateTime(item.date, item.timeOut);
+
+                if (itemActualDate >= shiftStartLimit && itemActualDate < shiftEndLimit) {
+                    currentFilteredDataGlobal.push(item);
+                    
+                    if (item.isDone && item.duration !== "-") {
+                        const h = item.duration.match(/(\d+)j/) ? parseInt(item.duration.match(/(\d+)j/)[1]) : 0;
+                        const m = item.duration.match(/(\d+)m/) ? parseInt(item.duration.match(/(\d+)m/)[1]) : 0;
+                        const s = item.duration.match(/(\d+)d/) ? parseInt(item.duration.match(/(\d+)d/)[1]) : 0;
+                        totalSecondsAccumulated += (h * 3600) + (m * 60) + s;
+                    }
+                }
+            });
+        }
+
+        if (currentFilteredDataGlobal.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-400">Tidak ada riwayat istirahat staff pada rentang ini.</td></tr>`;
+        } else {
+            currentFilteredDataGlobal.reverse().forEach(item => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50 transition";
                 
-                const h = matchHours ? parseInt(matchHours[1]) : 0;
-                const m = matchMinutes ? parseInt(matchMinutes[1]) : 0;
-                const s = matchSeconds ? parseInt(matchSeconds[1]) : 0;
-                
-                totalSecondsAccumulated += (h * 3600) + (m * 60) + s;
-            }
+                const shiftBadgeClass = item.shift === 'Pagi'
+                    ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
+                    : 'bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium';
+
+                row.innerHTML = `
+                    <td class="p-4 text-gray-500 font-mono">${item.date}</td>
+                    <td class="p-4 font-medium text-gray-900">${item.name}</td>
+                    <td class="p-4"><span class="${shiftBadgeClass}">${item.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
+                    <td class="p-4 text-amber-600 font-mono font-semibold">${item.timeOut}</td>
+                    <td class="p-4 ${item.isDone ? 'text-emerald-600' : 'text-gray-400'} font-mono font-semibold">${item.timeIn}</td>
+                    <td class="p-4 ${item.isDone ? 'text-blue-600 font-bold' : 'text-gray-400'}">${item.duration}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        if (totalDurationContainer) {
+            const h = Math.floor(totalSecondsAccumulated / 3600);
+            const m = Math.floor((totalSecondsAccumulated % 3600) / 60);
+            const s = totalSecondsAccumulated % 60;
+            totalDurationContainer.innerText = `${h}j ${m}m ${s}d`;
         }
     });
-
-    if (currentFilteredDataGlobal.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-400">Tidak ada riwayat istirahat staff pada rentang tanggal filter ini.</td></tr>`;
-    } else {
-        currentFilteredDataGlobal.slice().reverse().forEach(item => {
-            const row = document.createElement('tr');
-            row.className = "hover:bg-slate-50 transition";
-            
-            const shiftBadgeClass = item.shift === 'Pagi'
-                ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
-                : 'bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium';
-
-            row.innerHTML = `
-                <td class="p-4 text-gray-500 font-mono">${item.date}</td>
-                <td class="p-4 font-medium text-gray-900">${item.name}</td>
-                <td class="p-4"><span class="${shiftBadgeClass}">${item.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
-                <td class="p-4 text-amber-600 font-mono font-semibold">${item.timeOut}</td>
-                <td class="p-4 ${item.isDone ? 'text-emerald-600' : 'text-gray-400'} font-mono font-semibold">${item.timeIn}</td>
-                <td class="p-4 ${item.isDone ? 'text-blue-600 font-bold' : 'text-gray-400'}">${item.duration}</td>
-            `;
-            tableBody.appendChild(row);
-        });
-    }
-
-    if (totalDurationContainer) {
-        const h = Math.floor(totalSecondsAccumulated / 3600);
-        const m = Math.floor((totalSecondsAccumulated % 3600) / 60);
-        const s = totalSecondsAccumulated % 60;
-        totalDurationContainer.innerText = `${h}j ${m}m ${s}d`;
-    }
 }
 
 function downloadDashboardExcel() {
-    if (sessionStorage.getItem("team8_user_role") !== "admin") {
-        alert("Akses Ditolak! Hanya Administrator yang dapat mendownload laporan excel.");
-        return;
-    }
+    if (sessionStorage.getItem("team8_user_role") !== "admin" || currentFilteredDataGlobal.length === 0) return;
 
-    if (currentFilteredDataGlobal.length === 0) {
-        alert("Tidak ada data terfilter untuk diunduh!");
-        return;
-    }
-
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Tanggal,Nama Staff,Shift,Jam Keluar (OUT),Jam Masuk (IN),Durasi Istirahat\n";
-
+    let csvContent = "data:text/csv;charset=utf-8,Tanggal,Nama Staff,Shift,Jam Keluar (OUT),Jam Masuk (IN),Durasi Istirahat\n";
     currentFilteredDataGlobal.forEach(item => {
-        const rowData = [
-            item.date,
-            `"${item.name}"`,
-            item.shift,
-            item.timeOut,
-            item.timeIn,
-            item.duration
-        ];
-        csvContent += rowData.join(",") + "\n";
+        csvContent += `${item.date},"${item.name}",${item.shift},${item.timeOut},${item.timeIn},${item.duration}\n`;
     });
 
-    const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    
-    const fromDate = document.getElementById('dash-filter-date-from').value;
-    const toDate = document.getElementById('dash-filter-date-to').value;
-    
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Laporan_Break_TEAM8_${fromDate}_to_${toDate}.csv`);
+    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("download", `Laporan_Firebase_TEAM8.csv`);
     document.body.appendChild(link);
-    
     link.click();
     document.body.removeChild(link);
 }
