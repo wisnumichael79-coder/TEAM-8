@@ -25,6 +25,7 @@ function loadPage(pageName) {
             
             if (pageName === 'inout') {
                 renderStaffDropdown();
+                renderBreakLogs(); // MEMUAT ULANG RIWAYAT ABSEN SAAT MENU DIBUKA
             } else if (pageName === 'manajemen') {
                 renderStaffTable();
             }
@@ -139,7 +140,6 @@ function addStaff() {
         return;
     }
 
-    // Simpan shift langsung di objek profil staff
     staffList.push({ name: name, role: role, shift: shift });
     localStorage.setItem('team8_staff', JSON.stringify(staffList));
 
@@ -172,8 +172,66 @@ function deleteStaff(index) {
 }
 
 // ==========================================
-// PENCATATAN WAKTU ISTIRAHAT SATU BARIS (NEW)
+// DATABASE RIWAYAT BREAK (LOCALSTORAGE)
 // ==========================================
+
+function getBreaksFromStorage() {
+    const breaks = localStorage.getItem('team8_breaks');
+    return breaks ? JSON.parse(breaks) : [];
+}
+
+// Fungsi menampilkan data riwayat dari LocalStorage ke Tabel
+function renderBreakLogs() {
+    const tableBody = document.getElementById('log-table-body');
+    if (!tableBody) return;
+
+    const breakList = getBreaksFromStorage();
+    tableBody.innerHTML = "";
+
+    if (breakList.length === 0) {
+        tableBody.innerHTML = `<tr id="empty-row"><td colspan="7" class="p-8 text-center text-gray-400">Belum ada aktivitas istirahat tercatat.</td></tr>`;
+        return;
+    }
+
+    // Tampilkan dari data terbaru (paling atas)
+    breakList.slice().reverse().forEach((item) => {
+        const row = document.createElement('tr');
+        row.id = item.id;
+        row.className = "hover:bg-slate-50 transition";
+
+        const shiftBadgeClass = item.shift === 'Pagi'
+            ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
+            : 'bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium';
+
+        let actionColumnHtml = "";
+        let timeInClass = "p-4 text-gray-400 font-mono";
+        let durationClass = "p-4 text-gray-400 font-medium";
+
+        // Cek jika statusnya sudah selesai (Done) atau masih menggantung tombol IN
+        if (item.isDone) {
+            timeInClass = "p-4 text-emerald-600 font-mono font-semibold";
+            durationClass = "p-4 text-blue-600 font-bold";
+            actionColumnHtml = `<span class="text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1">Done</span>`;
+        } else {
+            actionColumnHtml = `
+                <button onclick="endBreak('${item.id}', ${item.startTimestamp}, '${item.name}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">
+                    MASUK BREAK (IN)
+                </button>
+            `;
+        }
+
+        row.innerHTML = `
+            <td class="p-4 text-gray-500 font-mono">${item.date}</td>
+            <td class="p-4 font-medium text-gray-900">${item.name}</td>
+            <td class="p-4"><span class="${shiftBadgeClass}">${item.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
+            <td class="p-4 text-amber-600 font-mono font-semibold">${item.timeOut}</td>
+            <td class="${timeInClass}" id="time-in-${item.id}">${item.timeIn}</td>
+            <td class="${durationClass}" id="duration-${item.id}">${item.duration}</td>
+            <td class="p-4 text-center" id="action-${item.id}">${actionColumnHtml}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
 
 // 1. Fungsi saat Staff Klik "MULAI ISTIRAHAT"
 function startBreak() {
@@ -187,7 +245,6 @@ function startBreak() {
         return;
     }
 
-    // Ambil data shift staff dari database lokal
     const staffList = getStaffFromStorage();
     const currentStaffData = staffList.find(s => s.name === staffName);
     const staffShift = currentStaffData ? currentStaffData.shift : "Pagi";
@@ -196,49 +253,35 @@ function startBreak() {
     const currentDateText = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const currentTimeText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     
-    const tableBody = document.getElementById('log-table-body');
-    const emptyRow = document.getElementById('empty-row');
-
-    if (emptyRow) emptyRow.remove();
-
-    // Buat ID unik berbasis timestamp untuk baris ini agar bisa di-update nanti
     const rowId = "break_" + now.getTime();
 
-    const newRow = document.createElement('tr');
-    newRow.id = rowId;
-    newRow.className = "hover:bg-slate-50 transition";
+    // Simpan objek data baru ke LocalStorage
+    const breakList = getBreaksFromStorage();
+    const newRecord = {
+        id: rowId,
+        date: currentDateText,
+        name: staffName,
+        shift: staffShift,
+        timeOut: currentTimeText,
+        timeIn: "-",
+        duration: "-",
+        startTimestamp: now.getTime(),
+        isDone: false
+    };
+    
+    breakList.push(newRecord);
+    localStorage.setItem('team8_breaks', JSON.stringify(breakList));
 
-    const shiftBadgeClass = staffShift === 'Pagi'
-        ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
-        : 'bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium';
-
-    // Isi HTML Baris (Waktu masuk dan durasi dikosongkan dulu, beri tombol IN di ujung)
-    newRow.innerHTML = `
-        <td class="p-4 text-gray-500 font-mono">${currentDateText}</td>
-        <td class="p-4 font-medium text-gray-900">${staffName}</td>
-        <td class="p-4"><span class="${shiftBadgeClass}">${staffShift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
-        <td class="p-4 text-amber-600 font-mono font-semibold">${currentTimeText}</td>
-        <td class="p-4 text-gray-400 font-mono" id="time-in-${rowId}">-</td>
-        <td class="p-4 text-gray-400 font-medium" id="duration-${rowId}">-</td>
-        <td class="p-4 text-center" id="action-${rowId}">
-            <button onclick="endBreak('${rowId}', ${now.getTime()}, '${staffName}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">
-                MASUK BREAK (IN)
-            </button>
-        </td>
-    `;
-
-    // Masukkan ke baris paling atas tabel
-    tableBody.insertBefore(newRow, tableBody.firstChild);
-    nameSelect.value = ""; // Reset pilihan dropdown nama
+    nameSelect.value = ""; 
     alert(`${staffName} mulai istirahat pada jam ${currentTimeText}`);
+    renderBreakLogs(); // Render ulang tabel dari database lokal
 }
 
-// 2. Fungsi saat Tombol "MASUK BREAK (IN)" di Ujung Baris Diklik
+// 2. Fungsi saat Tombol "MASUK BREAK (IN)" Diklik
 function endBreak(rowId, startTimeTimestamp, staffName) {
     const now = new Date();
     const timeInText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-    // Hitung durasi selisih waktu
     const timeDiff = now.getTime() - startTimeTimestamp;
     const totalSeconds = Math.floor(timeDiff / 1000);
     const hours = Math.floor(totalSeconds / 3600);
@@ -246,32 +289,24 @@ function endBreak(rowId, startTimeTimestamp, staffName) {
     const seconds = totalSeconds % 60;
     const durationText = `${hours}j ${minutes}m ${seconds}d`;
 
-    // Update elemen kolom di baris bersangkutan secara langsung
-    document.getElementById(`time-in-${rowId}`).innerText = timeInText;
-    document.getElementById(`time-in-${rowId}`).className = "p-4 text-emerald-600 font-mono font-semibold";
+    // Perbarui datanya di dalam database LocalStorage
+    const breakList = getBreaksFromStorage();
+    const recordIndex = breakList.findIndex(item => item.id === rowId);
     
-    document.getElementById(`duration-${rowId}`).innerText = durationText;
-    document.getElementById(`duration-${rowId}`).className = "p-4 text-blue-600 font-bold";
-
-    // Ubah tombol IN menjadi tanda Selesai/Checkmark agar tidak bisa diklik lagi
-    document.getElementById(`action-${rowId}`).innerHTML = `
-        <span class="text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1">
-            Done
-        </span>
-    `;
+    if (recordIndex !== -1) {
+        breakList[recordIndex].timeIn = timeInText;
+        breakList[recordIndex].duration = durationText;
+        breakList[recordIndex].isDone = true;
+        localStorage.setItem('team8_breaks', JSON.stringify(breakList));
+    }
 
     alert(`${staffName} telah kembali dari istirahat. Total durasi break: ${durationText}`);
+    renderBreakLogs(); // Render ulang tampilan tabel agar datanya sinkron berkala
 }
 
 function clearLogs() {
-    if(confirm("Apakah Anda yakin ingin menghapus semua riwayat absen hari ini?")) {
-        const tableBody = document.getElementById('log-table-body');
-        if(tableBody) {
-            tableBody.innerHTML = `
-                <tr id="empty-row">
-                    <td colspan="5" class="p-8 text-center text-gray-400">Belum ada data absensi masuk atau keluar.</td>
-                </tr>
-            `;
-        }
+    if(confirm("Apakah Anda yakin ingin menghapus semua riwayat absen dari sistem secara permanen?")) {
+        localStorage.removeItem('team8_breaks');
+        renderBreakLogs();
     }
 }
