@@ -1,12 +1,77 @@
-// PIN Keamanan untuk menghapus staff & log riwayat terpilih
+// ==========================================
+// KONFIGURASI KREDENSIAL KEAMANAN
+// ==========================================
+const ADMIN_UID = "admin";
+const ADMIN_PASSWORD = "Aa131313";
 const SECURITY_PIN = "1234";
 
 document.addEventListener("DOMContentLoaded", () => {
-    loadPage('dashboard');
+    // Jalankan pengecekan status login setiap kali web dibuka
+    checkLoginSession();
     startClock();
 });
 
+// ==========================================
+// LOGIKA PROSES AUTENTIKASI (LOGIN / LOGOUT)
+// ==========================================
+
+function checkLoginSession() {
+    const isLogedIn = sessionStorage.getItem("team8_login_status");
+    const loginScreen = document.getElementById("login-screen");
+    const mainApp = document.getElementById("main-app");
+
+    if (isLogedIn === "true") {
+        // Jika sudah login, hilangkan form login, munculkan aplikasi utama
+        if (loginScreen) loginScreen.classList.add("hidden");
+        if (mainApp) mainApp.classList.remove("hidden");
+        loadPage('dashboard');
+    } else {
+        // Jika belum login, pastikan form login muncul dan aplikasi disembunyikan
+        if (loginScreen) loginScreen.classList.remove("hidden");
+        if (mainApp) mainApp.classList.add("hidden");
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+function handleLogin() {
+    const uidInput = document.getElementById("login-uid").value.trim();
+    const passwordInput = document.getElementById("login-password").value;
+
+    if (uidInput === "" || passwordInput === "") {
+        alert("User ID dan Password tidak boleh kosong!");
+        return;
+    }
+
+    if (uidInput === ADMIN_UID && passwordInput === ADMIN_PASSWORD) {
+        // Set status login berhasil ke memori browser temporary
+        sessionStorage.setItem("team8_login_status", "true");
+        alert("Login Berhasil! Selamat Datang.");
+        
+        // Bersihkan inputan form login
+        document.getElementById("login-uid").value = "";
+        document.getElementById("login-password").value = "";
+        
+        checkLoginSession();
+    } else {
+        alert("Login Gagal! User ID atau Password yang Anda masukkan salah.");
+    }
+}
+
+function handleLogout() {
+    if (confirm("Apakah Anda yakin ingin keluar dari sistem?")) {
+        sessionStorage.removeItem("team8_login_status");
+        checkLoginSession();
+    }
+}
+
+// ==========================================
+// KONTROLLER ROUTING SISTEM HALAMAN
+// ==========================================
+
 function loadPage(pageName) {
+    // Proteksi tambahan, mencegah pemanggilan via console jika belum login
+    if (sessionStorage.getItem("team8_login_status") !== "true") return;
+
     const mainContent = document.getElementById('main-content');
     const pageTitle = document.getElementById('page-title');
     
@@ -26,7 +91,7 @@ function loadPage(pageName) {
             
             if (pageName === 'inout') {
                 renderStaffDropdown();
-                renderBreakLogs(); // Memuat riwayat dari database lokal saat menu dibuka
+                renderBreakLogs(); 
             } else if (pageName === 'manajemen') {
                 renderStaffTable();
             }
@@ -106,7 +171,6 @@ function renderStaffTable() {
             ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
             : 'bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium';
 
-        // Hanya menampilkan teks nama web saja, bukan tautan link aktif
         let webDisplayHtml = `<span class="text-gray-400">-</span>`;
         if (staff.web && staff.web !== "") {
             webDisplayHtml = `<span class="text-slate-600 font-medium">${staff.web}</span>`;
