@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEAM 8 - Absensi Staff</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-100 font-sans antialiased">
+
+    <div class="flex h-screen overflow-hidden">
+        
+        <div class="w-64 bg-slate-900 text-white flex flex-col justify-between hidden md:flex">
+            <div>
+                <div class="p-5 text-2xl font-bold tracking-wider border-b border-slate-800 text-center">
+                    TEAM 8
+                </div>
+                <nav class="p-4 space-y-2">
+                    <button onclick="loadPage('dashboard')" id="btn-dashboard" class="flex items-center space-x-3 w-full p-3 rounded-lg bg-blue-600 text-white font-medium transition">
+                        <i data-lucide="layout-dashboard"></i>
+                        <span>Dashboard</span>
+                    </button>
+                    <button onclick="loadPage('inout')" id="btn-inout" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                        <i data-lucide="log-in"></i>
+                        <span>Menu IN/OUT</span>
+                    </button>
+                </nav>
+            </div>
+            <div class="p-4 text-xs text-center text-slate-500 border-t border-slate-800">
+                &copy; 2026 TEAM 8 Dev
+            </div>
+        </div>
+
+        <div class="flex-1 flex flex-col overflow-y-auto">
+            
+            <header class="bg-white shadow-sm p-4 flex justify-between items-center px-6">
+                <div class="flex items-center space-x-3">
+                    <span class="text-xl font-bold text-slate-800 md:hidden">TEAM 8</span>
+                    <h1 id="page-title" class="text-xl font-semibold text-gray-800">Dashboard</h1>
+                </div>
+                <div class="flex space-x-4 md:hidden">
+                    <button onclick="loadPage('dashboard')" class="text-slate-600 p-1"><i data-lucide="layout-dashboard"></i></button>
+                    <button onclick="loadPage('inout')" class="text-slate-600 p-1"><i data-lucide="log-in"></i></button>
+                </div>
+            </header>
+
+            <main id="main-content" class="p-6 max-w-7xl w-full mx-auto">
+                </main>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
