@@ -25,6 +25,10 @@
                         <i data-lucide="log-in"></i>
                         <span>Menu IN/OUT</span>
                     </button>
+                    <button onclick="loadPage('manajemen')" id="btn-manajemen" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                        <i data-lucide="users"></i>
+                        <span>Manajemen Staff</span>
+                    </button>
                 </nav>
             </div>
             <div class="p-4 text-xs text-center text-slate-500 border-t border-slate-800">
@@ -42,6 +46,7 @@
                 <div class="flex space-x-4 md:hidden">
                     <button onclick="loadPage('dashboard')" class="text-slate-600 p-1"><i data-lucide="layout-dashboard"></i></button>
                     <button onclick="loadPage('inout')" class="text-slate-600 p-1"><i data-lucide="log-in"></i></button>
+                    <button onclick="loadPage('manajemen')" class="text-slate-600 p-1"><i data-lucide="users"></i></button>
                 </div>
             </header>
 

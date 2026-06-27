@@ -1,0 +1,38 @@
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Tambah Staff Baru</h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Nama Lengkap</label>
+                <input type="text" id="new-staff-name" placeholder="Contoh: John Doe" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Jabatan / Divisi</label>
+                <input type="text" id="new-staff-role" placeholder="Contoh: Staff Admin" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <button onclick="addStaff()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium p-3 rounded-lg flex justify-center items-center space-x-2 transition shadow-sm">
+                <i data-lucide="user-plus"></i>
+                <span>Simpan Staff</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="p-5 border-b border-gray-100 bg-gray-50">
+            <h3 class="font-semibold text-gray-800">Daftar Karyawan Aktif</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-600 text-sm uppercase font-semibold">
+                        <th class="p-4 border-b">Nama Staff</th>
+                        <th class="p-4 border-b">Jabatan</th>
+                        <th class="p-4 border-b text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="staff-table-body" class="text-gray-700 text-sm divide-y divide-gray-100">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
