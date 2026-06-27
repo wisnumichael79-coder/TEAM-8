@@ -16,8 +16,8 @@ const firebaseConfig = {
   databaseURL: "https://team-8-internal-default-rtdb.asia-southeast1.firebasedatabase.app/",
   projectId: "team8-absensi",
   storageBucket: "team8-absensi.appspot.com",
-  messagingSenderId: "...",
-  appId: "..."
+  messagingSenderId: "456282987112",
+  appId: "1:456282987112:web:ba8fce55db59985acb39dd"
 };
 
 // Jalankan Inisialisasi Firebase Koneksi Cloud
