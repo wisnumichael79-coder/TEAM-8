@@ -178,13 +178,15 @@ function deleteStaff(index) {
 }
 
 // ==========================================
-// PENCATATAN ABSEN IN / OUT
+// PENCATATAN ABSEN IN / OUT (DENGAN SHIFT)
 // ==========================================
 function doAbsen(status) {
     const nameSelect = document.getElementById('staff-name');
-    if(!nameSelect) return;
+    const shiftSelect = document.getElementById('staff-shift');
+    if(!nameSelect || !shiftSelect) return;
     
     const staffName = nameSelect.value;
+    const staffShift = shiftSelect.value;
 
     if (!staffName || staffName === "") {
         alert("Silakan pilih nama Staff terlebih dahulu!");
@@ -227,16 +229,22 @@ function doAbsen(status) {
         ? 'bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full text-xs font-semibold' 
         : 'bg-rose-100 text-rose-800 px-2.5 py-1 rounded-full text-xs font-semibold';
 
+    // Desain warna label penanda Shift
+    const shiftBadgeClass = staffShift === 'Pagi'
+        ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
+        : 'bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium';
+
     newRow.innerHTML = `
         <td class="p-4 font-medium text-gray-900">${staffName}</td>
+        <td class="p-4"><span class="${shiftBadgeClass}">${staffShift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
         <td class="p-4"><span class="${badgeClass}">${status === 'IN' ? 'MASUK (IN)' : 'KELUAR (OUT)'}</span></td>
         <td class="p-4 text-gray-500 font-mono">${currentTimeText}</td>
         <td class="p-4 text-slate-700 font-medium">${durationText}</td>
     `;
 
     tableBody.insertBefore(newRow, tableBody.firstChild);
-    nameSelect.value = "";
-    alert(`Absen ${status} sukses untuk: ${staffName}`);
+    nameSelect.value = ""; // Reset pilihan dropdown nama
+    alert(`Absen ${status} [Shift ${staffShift}] sukses untuk: ${staffName}`);
 }
 
 function clearLogs() {
