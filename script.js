@@ -1,3 +1,4 @@
+// PIN Keamanan untuk menghapus staff & log riwayat terpilih
 const SECURITY_PIN = "1234";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -25,7 +26,7 @@ function loadPage(pageName) {
             
             if (pageName === 'inout') {
                 renderStaffDropdown();
-                renderBreakLogs(); // MEMUAT ULANG RIWAYAT ABSEN SAAT MENU DIBUKA
+                renderBreakLogs(); // Memuat riwayat dari database lokal saat menu dibuka
             } else if (pageName === 'manajemen') {
                 renderStaffTable();
             }
@@ -93,7 +94,7 @@ function renderStaffTable() {
     tableBody.innerHTML = "";
 
     if (staffList.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400">Belum ada staff terdaftar. Silakan tambah di form sebelah kiri.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400">Belum ada staff terdaftar. Silakan tambah di form sebelah kiri.</td></tr>`;
         return;
     }
 
@@ -105,10 +106,21 @@ function renderStaffTable() {
             ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
             : 'bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium';
 
+        let webLinkHtml = `<span class="text-gray-400">-</span>`;
+        if (staff.web && staff.web !== "") {
+            const targetUrl = staff.web.startsWith('http') ? staff.web : `https://${staff.web}`;
+            webLinkHtml = `
+                <a href="${targetUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 font-medium">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Kunjungi
+                </a>
+            `;
+        }
+
         row.innerHTML = `
             <td class="p-4 font-medium text-gray-900">${staff.name}</td>
             <td class="p-4 text-gray-500">${staff.role}</td>
             <td class="p-4"><span class="${shiftBadgeClass}">${staff.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
+            <td class="p-4">${webLinkHtml}</td>
             <td class="p-4 text-center">
                 <button onclick="deleteStaff(${index})" class="text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg text-xs font-medium transition">
                     Hapus
@@ -117,19 +129,23 @@ function renderStaffTable() {
         `;
         tableBody.appendChild(row);
     });
+
+    if (window.lucide) lucide.createIcons();
 }
 
 function addStaff() {
     const nameInput = document.getElementById('new-staff-name');
     const roleInput = document.getElementById('new-staff-role');
+    const webInput = document.getElementById('new-staff-web');
     const shiftSelect = document.getElementById('new-staff-shift');
     
     const name = nameInput.value.trim();
     const role = roleInput.value.trim();
+    const web = webInput ? webInput.value.trim() : "";
     const shift = shiftSelect.value;
 
     if (name === "" || role === "") {
-        alert("Semua kolom nama dan jabatan wajib diisi!");
+        alert("Kolom nama dan jabatan wajib diisi!");
         return;
     }
 
@@ -140,16 +156,16 @@ function addStaff() {
         return;
     }
 
-    staffList.push({ name: name, role: role, shift: shift });
+    staffList.push({ name: name, role: role, web: web, shift: shift });
     localStorage.setItem('team8_staff', JSON.stringify(staffList));
 
     nameInput.value = "";
     roleInput.value = "";
+    if(webInput) webInput.value = "";
     shiftSelect.value = "Pagi";
     
     alert(`Sukses menambahkan ${name} dengan Shift ${shift}.`);
     renderStaffTable();
-    if (window.lucide) lucide.createIcons();
 }
 
 function deleteStaff(index) {
@@ -172,7 +188,7 @@ function deleteStaff(index) {
 }
 
 // ==========================================
-// DATABASE RIWAYAT BREAK (LOCALSTORAGE + CENTANG HAPUS + PIN)
+// DATABASE RIWAYAT BREAK (LOCALSTORAGE)
 // ==========================================
 
 function getBreaksFromStorage() {
@@ -180,7 +196,6 @@ function getBreaksFromStorage() {
     return breaks ? JSON.parse(breaks) : [];
 }
 
-// 1. Fungsi Tampilkan Log Riwayat Kerja ke Tabel dengan Checkbox
 function renderBreakLogs() {
     const tableBody = document.getElementById('log-table-body');
     if (!tableBody) return;
@@ -188,7 +203,6 @@ function renderBreakLogs() {
     const breakList = getBreaksFromStorage();
     tableBody.innerHTML = "";
 
-    // Reset tombol master checkbox di header ke posisi tidak tercentang
     const checkAllBox = document.getElementById('check-all-logs');
     if (checkAllBox) checkAllBox.checked = false;
 
@@ -197,7 +211,6 @@ function renderBreakLogs() {
         return;
     }
 
-    // Render dari data paling baru (Reverse)
     breakList.slice().reverse().forEach((item) => {
         const row = document.createElement('tr');
         row.id = item.id;
@@ -241,7 +254,6 @@ function renderBreakLogs() {
     if (window.lucide) lucide.createIcons();
 }
 
-// 2. Fungsi Master Checkbox (Centang Semua Sekaligus)
 function toggleSelectAllLogs(masterCheckbox) {
     const checkboxes = document.querySelectorAll('input[name="log-select"]');
     checkboxes.forEach(cb => {
@@ -249,7 +261,6 @@ function toggleSelectAllLogs(masterCheckbox) {
     });
 }
 
-// 3. Fungsi Aksi Memulai Istirahat (BREAK OUT)
 function startBreak() {
     const nameSelect = document.getElementById('staff-name');
     if(!nameSelect) return;
@@ -292,7 +303,6 @@ function startBreak() {
     renderBreakLogs();
 }
 
-// 4. Fungsi Mengakhiri Istirahat (BREAK IN)
 function endBreak(rowId, startTimeTimestamp, staffName) {
     const now = new Date();
     const timeInText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -318,7 +328,6 @@ function endBreak(rowId, startTimeTimestamp, staffName) {
     renderBreakLogs();
 }
 
-// 5. Fungsi Hapus Riwayat Terpilih + Validasi Masukkan PIN Keamanan
 function deleteSelectedLogs() {
     const checkboxes = document.querySelectorAll('input[name="log-select"]:checked');
     
@@ -327,29 +336,37 @@ function deleteSelectedLogs() {
         return;
     }
 
-    // Konfirmasi jumlah item yang akan dihapus
     if (confirm(`Apakah Anda yakin ingin menghapus ${checkboxes.length} riwayat istirahat terpilih?`)) {
-        // Proteksi Input PIN Keamanan
         const userPin = prompt("Masukkan PIN Keamanan untuk menghapus riwayat log:");
         
-        if (userPin === null) return; // Batal jika tekan Cancel
+        if (userPin === null) return;
 
         if (userPin === SECURITY_PIN) {
-            // Ambil daftar semua ID log yang dicentang oleh user
             const idsToDelete = Array.from(checkboxes).map(cb => cb.value);
-            
             let breakList = getBreaksFromStorage();
             
-            // Filter database lokal untuk menyisihkan/membuang ID yang dicentang
             breakList = breakList.filter(item => !idsToDelete.includes(item.id));
-            
-            // Simpan kembali data bersih ke LocalStorage
             localStorage.setItem('team8_breaks', JSON.stringify(breakList));
             
             alert("Data riwayat log terpilih berhasil dihapus.");
-            renderBreakLogs(); // Gambar ulang tabel riwayat
+            renderBreakLogs();
         } else {
             alert("Gagal menghapus log! PIN Keamanan yang Anda masukkan SALAH.");
+        }
+    }
+}
+
+function clearLogs() {
+    if (confirm("Apakah Anda yakin ingin menghapus seluruh riwayat secara permanen?")) {
+        const userPin = prompt("Masukkan PIN Keamanan untuk menghapus seluruh riwayat:");
+        if (userPin === null) return;
+
+        if (userPin === SECURITY_PIN) {
+            localStorage.removeItem('team8_breaks');
+            alert("Seluruh riwayat berhasil dibersihkan.");
+            renderBreakLogs();
+        } else {
+            alert("Gagal menghapus! PIN Keamanan SALAH.");
         }
     }
 }
