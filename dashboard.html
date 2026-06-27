@@ -1,7 +1,44 @@
-<div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center py-20">
-    <div class="mx-auto h-12 w-12 text-gray-400 mb-4 flex justify-center items-center">
-        <i data-lucide="construction" class="h-12 w-12 text-gray-400"></i>
+<div class="space-y-6">
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4 font-sans">Filter Rincian Istirahat Staff</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Tanggal Kerja</label>
+                <input type="date" id="dash-filter-date" onchange="renderDashboard()" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white font-mono">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Nama Staff</label>
+                <select id="dash-filter-staff" onchange="renderDashboard()" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                    <option value="ALL">-- Tampilkan Semua Staff --</option>
+                </select>
+            </div>
+            <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 flex flex-col justify-center">
+                <span class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Durasi Break</span>
+                <span id="dash-total-duration" class="text-2xl font-black text-blue-900 mt-1 font-mono">0j 0m 0d</span>
+            </div>
+        </div>
     </div>
-    <h2 class="text-xl font-medium text-gray-600">Dashboard Utama</h2>
-    <p class="text-gray-400 mt-2">Halaman dashboard saat ini masih kosong.</p>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="p-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+            <h3 class="font-semibold text-gray-800">Rincian Riwayat Kerja & Istirahat</h3>
+            <span id="dash-period-badge" class="text-xs bg-slate-200 text-slate-700 font-mono font-bold px-2.5 py-1 rounded-md">Memuat...</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-600 text-sm uppercase font-semibold">
+                        <th class="p-4 border-b">Tanggal Log</th>
+                        <th class="p-4 border-b">Nama Staff</th>
+                        <th class="p-4 border-b">Shift Kerja</th>
+                        <th class="p-4 border-b">Jam Keluar</th>
+                        <th class="p-4 border-b">Jam Masuk</th>
+                        <th class="p-4 border-b">Durasi Break</th>
+                    </tr>
+                </thead>
+                <tbody id="dash-table-body" class="text-gray-700 text-sm divide-y divide-gray-100">
+                    </tbody>
+            </table>
+        </div>
+    </div>
 </div>

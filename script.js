@@ -6,7 +6,6 @@ const ADMIN_PASSWORD = "Aa131313";
 const SECURITY_PIN = "1234";
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Jalankan pengecekan status login setiap kali web dibuka
     checkLoginSession();
     startClock();
 });
@@ -21,12 +20,10 @@ function checkLoginSession() {
     const mainApp = document.getElementById("main-app");
 
     if (isLogedIn === "true") {
-        // Jika sudah login, hilangkan form login, munculkan aplikasi utama
         if (loginScreen) loginScreen.classList.add("hidden");
         if (mainApp) mainApp.classList.remove("hidden");
         loadPage('dashboard');
     } else {
-        // Jika belum login, pastikan form login muncul dan aplikasi disembunyikan
         if (loginScreen) loginScreen.classList.remove("hidden");
         if (mainApp) mainApp.classList.add("hidden");
         if (window.lucide) lucide.createIcons();
@@ -43,14 +40,10 @@ function handleLogin() {
     }
 
     if (uidInput === ADMIN_UID && passwordInput === ADMIN_PASSWORD) {
-        // Set status login berhasil ke memori browser temporary
         sessionStorage.setItem("team8_login_status", "true");
         alert("Login Berhasil! Selamat Datang.");
-        
-        // Bersihkan inputan form login
         document.getElementById("login-uid").value = "";
         document.getElementById("login-password").value = "";
-        
         checkLoginSession();
     } else {
         alert("Login Gagal! User ID atau Password yang Anda masukkan salah.");
@@ -69,7 +62,6 @@ function handleLogout() {
 // ==========================================
 
 function loadPage(pageName) {
-    // Proteksi tambahan, mencegah pemanggilan via console jika belum login
     if (sessionStorage.getItem("team8_login_status") !== "true") return;
 
     const mainContent = document.getElementById('main-content');
@@ -89,7 +81,10 @@ function loadPage(pageName) {
 
             updateSidebarStyle(pageName);
             
-            if (pageName === 'inout') {
+            if (pageName === 'dashboard') {
+                initDashboardFilters();
+                renderDashboard();
+            } else if (pageName === 'inout') {
                 renderStaffDropdown();
                 renderBreakLogs(); 
             } else if (pageName === 'manajemen') {
@@ -428,5 +423,128 @@ function clearLogs() {
         } else {
             alert("Gagal menghapus! PIN Keamanan SALAH.");
         }
+    }
+}
+
+// ==========================================
+// KONTROLLER CORE LOGIKA DASHBOARD (NEW ENGINE)
+// ==========================================
+
+// Inisialisasi nilai default tanggal input & dropdown nama staff pada dashboard
+function initDashboardFilters() {
+    const dateInput = document.getElementById('dash-filter-date');
+    const staffSelect = document.getElementById('dash-filter-staff');
+    
+    if (dateInput && !dateInput.value) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        dateInput.value = `${year}-${month}-${day}`;
+    }
+
+    if (staffSelect) {
+        const staffList = getStaffFromStorage();
+        staffSelect.innerHTML = '<option value="ALL">-- Tampilkan Semua Staff --</option>';
+        staffList.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.name;
+            opt.innerText = s.name;
+            staffSelect.appendChild(opt);
+        });
+    }
+}
+
+// Helper untuk mengubah string "DD/MM/YYYY" dan "HH:MM:SS" dari log menjadi Objek Date utuh
+function parseDateTime(dateStr, timeStr) {
+    const [day, month, year] = dateStr.split('/').map(Number);
+    const [hours, minutes, seconds] = timeStr.split('.').map(Number); // id-ID memakai separator titik (.)
+    return new Date(year, month - 1, day, hours, minutes, seconds || 0);
+}
+
+// Fungsi Render Utama Dashboard (Filter Akurat Berbasis Pembagian Shift Kerja)
+function renderDashboard() {
+    const tableBody = document.getElementById('dash-table-body');
+    const totalDurationContainer = document.getElementById('dash-total-duration');
+    const periodBadge = document.getElementById('dash-period-badge');
+    const filterDateVal = document.getElementById('dash-filter-date').value;
+    const filterStaffVal = document.getElementById('dash-filter-staff').value;
+
+    if (!tableBody || !filterDateVal) return;
+
+    // Definisikan range filter tanggal (Mulai dari 27 jam 06:30 pagi s/d 28 jam 06:30 pagi)
+    const [fYear, fMonth, fDay] = filterDateVal.split('-').map(Number);
+    const shiftStartLimit = new Date(fYear, fMonth - 1, fDay, 6, 30, 0);
+    
+    const shiftEndLimit = new Date(fYear, fMonth - 1, fDay, 6, 30, 0);
+    shiftEndLimit.setDate(shiftEndLimit.getDate() + 1); // Tambah 1 hari ke depan
+
+    // Perbarui label rentang waktu operasional shift di UI
+    if (periodBadge) {
+        periodBadge.innerText = `Shift: ${shiftStartLimit.toLocaleDateString('id-ID')} (06:30) s/d ${shiftEndLimit.toLocaleDateString('id-ID')} (06:30)`;
+    }
+
+    const breakList = getBreaksFromStorage();
+    tableBody.innerHTML = "";
+    
+    let filteredRecords = [];
+    let totalSecondsAccumulated = 0;
+
+    breakList.forEach(item => {
+        // Abaikan data jika nama tidak cocok dengan filter staff terpilih
+        if (filterStaffVal !== "ALL" && item.name !== filterStaffVal) return;
+
+        // Dapatkan representasi waktu asli dari kejadian BREAK OUT (Waktu Keluar)
+        const itemActualDate = parseDateTime(item.date, item.timeOut);
+
+        // Filter Inti: Cek apakah waktu kejadian berada dalam batas range shift kerja
+        if (itemActualDate >= shiftStartLimit && itemActualDate < shiftEndLimit) {
+            filteredRecords.push(item);
+            
+            // Hitung akumulasi detik jika status break sudah diselesaikan (isDone)
+            if (item.isDone && item.duration !== "-") {
+                const matchHours = item.duration.match(/(\d+)j/);
+                const matchMinutes = item.duration.match(/(\d+)m/);
+                const matchSeconds = item.duration.match(/(\d+)d/);
+                
+                const h = matchHours ? parseInt(matchHours[1]) : 0;
+                const m = matchMinutes ? parseInt(matchMinutes[1]) : 0;
+                const s = matchSeconds ? parseInt(matchSeconds[1]) : 0;
+                
+                totalSecondsAccumulated += (h * 3600) + (m * 60) + s;
+            }
+        }
+    });
+
+    // Masukkan data hasil filter ke baris tabel dashboard
+    if (filteredRecords.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-400">Tidak ada riwayat istirahat staff pada rentang shift tanggal ini.</td></tr>`;
+    } else {
+        filteredRecords.slice().reverse().forEach(item => {
+            const row = document.createElement('tr');
+            row.className = "hover:bg-slate-50 transition";
+            
+            const shiftBadgeClass = item.shift === 'Pagi'
+                ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
+                : 'bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium';
+
+            row.innerHTML = `
+                <td class="p-4 text-gray-500 font-mono">${item.date}</td>
+                <td class="p-4 font-medium text-gray-900">${item.name}</td>
+                <td class="p-4"><span class="${shiftBadgeClass}">${item.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
+                <td class="p-4 text-amber-600 font-mono font-semibold">${item.timeOut}</td>
+                <td class="p-4 ${item.isDone ? 'text-emerald-600' : 'text-gray-400'} font-mono font-semibold">${item.timeIn}</td>
+                <td class="p-4 ${item.isDone ? 'text-blue-600 font-bold' : 'text-gray-400'}">${item.duration}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    // Ubah akumulasi detik kembali ke format teks Jam Menit Detik di card rangkuman
+    if (totalDurationContainer) {
+        const h = Math.floor(totalSecondsAccumulated / 3600);
+        const m = Math.floor((totalSecondsAccumulated % 3600) / 60);
+        const s = totalSecondsAccumulated % 60;
+        totalDurationContainer.innerText = `${h}j ${m}m ${s}d`;
     }
 }
