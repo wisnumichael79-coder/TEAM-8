@@ -536,7 +536,8 @@ function startBreak() {
                 document.getElementById('custom-reason-container').classList.add('hidden');
             }
             
-            alert(`${staffName} mulai istirahat dengan alasan [${finalReason}]. Status aktif dipantau di Firebase.`);
+            // Teks penjelas Firebase di belakang sudah dihapus
+            alert(`${staffName} mulai istirahat dengan alasan [${finalReason}].`);
             renderBreakLogs();
         });
     });
@@ -585,7 +586,8 @@ function endBreak(rowId, startTimeTimestamp, staffName) {
                 body: JSON.stringify(completedPayload)
             });
 
-            alert(`${staffName} telah kembali. Seluruh riwayat durasi sukses terekam rapi ke Google Spreadsheet.`);
+            // Teks penjelas Google Spreadsheet di belakang sudah dihapus
+            alert(`${staffName} telah kembali.`);
             renderBreakLogs();
         });
     });
