@@ -33,15 +33,16 @@ firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Perbaiki struktur HTML dulu
-    repairMainDOMStructure(); 
+    console.log("DOM Siap. Memulai sistem...");
     
-    // 2. Baru inisialisasi fitur lain
+    // 1. Injeksi tampilan login ke body jika belum ada
     injectLoginScreenHTML();
-    checkLoginSession();
-    startClock();
     
-    // Penting: Inisialisasi ikon Lucide setelah DOM siap
+    // 2. Cek session login
+    checkLoginSession();
+    
+    // 3. Inisialisasi lain
+    startClock();
     if (window.lucide) lucide.createIcons();
 });
 
@@ -107,7 +108,10 @@ function repairMainDOMStructure() {
 // INJEKSI ELEMEN LOGIN OTOMATIS
 // ==========================================
 function injectLoginScreenHTML() {
-    if (document.getElementById("login-screen")) return;
+    if (document.getElementById("login-screen")) {
+        console.log("Login screen sudah ada di HTML, tidak perlu di-inject.");
+        return; 
+    }
 
     const loginDiv = document.createElement("div");
     loginDiv.id = "login-screen";
