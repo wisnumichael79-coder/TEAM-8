@@ -2,7 +2,7 @@
 // KONFIGURASI KREDENSIAL KEAMANAN & AKUN
 // ==========================================
 const ADMIN_UID = "admin";
-const ADMIN_PASSWORD = "team8medan";
+const ADMIN_PASSWORD = "Password123@";
 
 const STAFF_UID = "staff";
 const STAFF_PASSWORD = "Aa131313";
