@@ -2,7 +2,7 @@
 // KONFIGURASI KREDENSIAL KEAMANAN & AKUN
 // ==========================================
 const ADMIN_UID = "admin";
-const ADMIN_PASSWORD = "micc1010";
+const ADMIN_PASSWORD = "team8medan";
 
 const STAFF_UID = "staff";
 const STAFF_PASSWORD = "Aa131313";
@@ -17,50 +17,54 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ==========================================
-// INJEKSI ELEMEN LOGIN OTOMATIS
+// INJEKSI ELEMEN LOGIN OTOMATIS (AGAR INDEX.HTML TETAP)
 // ==========================================
 function injectLoginScreenHTML() {
-    // Jika elemen login sudah ada, tidak perlu disuntik lagi
     if (document.getElementById("login-screen")) return;
 
-    // Buat container untuk screen login overlay
     const loginDiv = document.createElement("div");
     loginDiv.id = "login-screen";
-    // Styling menggunakan kelas utilitas Tailwind
-    loginDiv.className = "fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900 px-4";
+    loginDiv.className = "fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900 px-4";
     loginDiv.innerHTML = `
-        <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-slate-200 font-sans">
-            <div class="text-center mb-6">
+        <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-slate-200 font-sans text-center">
+            <div class="mb-6">
                 <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                    <i data-lucide="lock" class="w-8 h-8"></i>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
                 <h2 class="text-2xl font-bold text-slate-800">Sistem Absensi TEAM 8</h2>
                 <p class="text-sm text-slate-400 mt-1">Silakan masuk menggunakan akun Anda</p>
             </div>
             
-            <div class="space-y-4 text-left">
+            <div class="space-y-4 text-left mb-6">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">User ID</label>
-                    <input type="text" id="login-uid" placeholder="Masukkan User ID" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-900 bg-white">
+                    <input type="text" id="login-uid" placeholder="Masukkan User ID" class="w-full p-3 border border-slate-300 rounded-lg text-slate-900 bg-white outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                    <input type="password" id="login-password" placeholder="••••••••" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-900 bg-white">
+                    <input type="password" id="login-password" placeholder="••••••••" class="w-full p-3 border border-slate-300 rounded-lg text-slate-900 bg-white outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
-                <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold p-3 rounded-lg transition shadow-md flex justify-center items-center gap-2 mt-2 cursor-pointer">
-                    <span>Masuk Aplikasi</span>
+                <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold p-3 rounded-lg transition shadow-md cursor-pointer block text-center">
+                    Masuk Aplikasi
                 </button>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 space-y-2">
+                <p class="text-xs text-slate-400 font-medium mb-2">Tombol Masuk Cepat (Bypass):</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="bypassLogin('admin')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold py-2.5 px-4 rounded-lg transition cursor-pointer">
+                        🔑 Masuk (Admin)
+                    </button>
+                    <button onclick="bypassLogin('staff')" class="bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold py-2.5 px-4 rounded-lg transition cursor-pointer">
+                        👤 Masuk (Staff)
+                    </button>
+                </div>
             </div>
         </div>
     `;
 
-    // Pasang screen login ke bagian paling atas body HTML
     document.body.appendChild(loginDiv);
-
-    // Tambahkan tombol logout di sidebar jika belum ada
-    setTimeout(() => {
-        injectLogoutButton();
-    }, 500);
+    setTimeout(() => { injectLogoutButton(); }, 500);
 }
 
 function injectLogoutButton() {
@@ -74,7 +78,7 @@ function injectLogoutButton() {
                 <span>Keluar Sistem (Logout)</span>
             </button>
         `;
-        sidebar.parentElement.appendChild(logoutWrapper);
+        sidebar.appendChild(logoutWrapper);
     }
 }
 
@@ -84,9 +88,14 @@ function injectLogoutButton() {
 function checkLoginSession() {
     const isLogedIn = sessionStorage.getItem("team8_login_status");
     const loginScreen = document.getElementById("login-screen");
+    const userBadge = document.querySelector("header span");
 
     if (isLogedIn === "true") {
         if (loginScreen) loginScreen.classList.add("hidden");
+        if (userBadge) {
+            const currentRole = sessionStorage.getItem("team8_user_role");
+            userBadge.innerText = currentRole === "admin" ? "Administrator" : "Staff Karyawan";
+        }
         loadPage('dashboard');
     } else {
         if (loginScreen) loginScreen.classList.remove("hidden");
@@ -98,12 +107,8 @@ function handleLogin() {
     const uidElement = document.getElementById("login-uid");
     const passwordElement = document.getElementById("login-password");
 
-    // Jika elemen input gagal dibaca oleh JS karena tertutup script lain di index.html
     if (!uidElement || !passwordElement) {
-        alert("Sistem mendeteksi bentrok ID pada index.html. Menggunakan login otomatis...");
-        sessionStorage.setItem("team8_login_status", "true");
-        sessionStorage.setItem("team8_user_role", "admin");
-        checkLoginSession();
+        alert("Elemen login terhambat. Silakan klik tombol bypass di bawah form.");
         return;
     }
 
@@ -128,59 +133,21 @@ function handleLogin() {
         clearLoginForm();
         checkLoginSession();
     } else {
-        alert("Login Gagal! User ID atau Password yang Anda masukkan salah.");
+        alert("Login Gagal! User ID atau Password salah.");
     }
 }
 
-// PEMBARUAN FUNGSI INJEKSI (Tambahkan tombol masuk darurat jika form ketikan Anda macet)
-function injectLoginScreenHTML() {
-    if (document.getElementById("login-screen")) return;
-
-    const loginDiv = document.createElement("div");
-    loginDiv.id = "login-screen";
-    loginDiv.className = "fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900 px-4";
-    loginDiv.innerHTML = `
-        <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-slate-200 font-sans text-center">
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-slate-800">Sistem Absensi TEAM 8</h2>
-                <p class="text-sm text-slate-400 mt-1">Silakan masuk ke sistem</p>
-            </div>
-            
-            <div class="space-y-4 text-left mb-6">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">User ID</label>
-                    <input type="text" id="login-uid" placeholder="Masukkan User ID" class="w-full p-3 border border-slate-300 rounded-lg text-slate-900 bg-white outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                    <input type="password" id="login-password" placeholder="••••••••" class="w-full p-3 border border-slate-300 rounded-lg text-slate-900 bg-white outline-none">
-                </div>
-                <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold p-3 rounded-lg transition shadow-md cursor-pointer block text-center">
-                    Masuk dengan Akun
-                </button>
-            </div>
-
-            <div class="pt-4 border-t border-slate-100 space-y-2">
-                <p class="text-xs text-slate-400 font-medium mb-2">Alternatif Masuk Cepat (Klik Langsung):</p>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="sessionStorage.setItem('team8_login_status', 'true'); sessionStorage.setItem('team8_user_role', 'admin'); checkLoginSession();" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold py-2.5 px-4 rounded-lg transition cursor-pointer">
-                        🔑 Masuk (Admin)
-                    </button>
-                    <button onclick="sessionStorage.setItem('team8_login_status', 'true'); sessionStorage.setItem('team8_user_role', 'staff'); checkLoginSession();" class="bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold py-2.5 px-4 rounded-lg transition cursor-pointer">
-                        👤 Masuk (Staff)
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(loginDiv);
-    setTimeout(() => { injectLogoutButton(); }, 500);
+function bypassLogin(role) {
+    sessionStorage.setItem("team8_login_status", "true");
+    sessionStorage.setItem("team8_user_role", role);
+    checkLoginSession();
 }
 
 function clearLoginForm() {
-    document.getElementById("login-uid").value = "";
-    document.getElementById("login-password").value = "";
+    const uid = document.getElementById("login-uid");
+    const pass = document.getElementById("login-password");
+    if(uid) uid.value = "";
+    if(pass) pass.value = "";
 }
 
 function handleLogout() {
@@ -223,7 +190,7 @@ function loadPage(pageName) {
                 renderStaffDropdown();
                 renderBreakLogs(); 
                 
-                // Pembatasan Akses Staff di menu IN/OUT
+                // Pembatasan menu IN/OUT jika yang masuk adalah STAFF
                 if (userRole === "staff") {
                     const deleteLogBtn = document.getElementById("btn-delete-log-container");
                     const thCheckLog = document.getElementById("th-check-log");
@@ -231,7 +198,7 @@ function loadPage(pageName) {
                     if (thCheckLog) thCheckLog.classList.add("hidden");
                 }
             } else if (pageName === 'manajemen') {
-                // Pembatasan Akses Staff di menu Manajemen Staff
+                // Pembatasan menu MANAJEMEN STAFF jika yang masuk adalah STAFF
                 if (userRole === "staff") {
                     const formTambah = document.getElementById("form-tambah-staff");
                     const tableContainer = document.getElementById("tabel-staff-container");
@@ -241,7 +208,7 @@ function loadPage(pageName) {
                     if (thAksiStaff) thAksiStaff.classList.add("hidden");
                     
                     if (tableContainer) {
-                        tableContainer.className = "w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden";
+                        tableContainer.className = "w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden lg:col-span-3";
                     }
                 }
                 renderStaffTable();
@@ -334,7 +301,7 @@ function renderStaffTable() {
         if (userRole !== "staff") {
             tdAksiHtml = `
                 <td class="p-4 text-center">
-                    <button onclick="deleteStaff(${index})" class="text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                    <button onclick="deleteStaff(${index})" class="text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer">
                         Hapus
                     </button>
                 </td>
@@ -491,6 +458,7 @@ function toggleSelectAllLogs(masterCheckbox) {
     });
 }
 
+// Trigger pencatatan istirahat saat tombol diklik
 function startBreak() {
     const nameSelect = document.getElementById('staff-name');
     if(!nameSelect) return;
