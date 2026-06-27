@@ -17,14 +17,10 @@
             </div>
         </div>
 
-        <div class="flex gap-4">
-            <button onclick="doBreak('BREAK OUT')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-medium p-3 rounded-lg flex justify-center items-center space-x-2 transition shadow-sm">
+        <div>
+            <button onclick="startBreak()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium p-3 rounded-lg flex justify-center items-center space-x-2 transition shadow-sm">
                 <i data-lucide="coffee"></i>
                 <span>MULAI ISTIRAHAT (BREAK OUT)</span>
-            </button>
-            <button onclick="doBreak('BREAK IN')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium p-3 rounded-lg flex justify-center items-center space-x-2 transition shadow-sm">
-                <i data-lucide="play-circle"></i>
-                <span>SELESAI ISTIRAHAT (BREAK IN)</span>
             </button>
         </div>
     </div>
@@ -38,16 +34,18 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-slate-50 text-slate-600 text-sm uppercase font-semibold">
+                        <th class="p-4 border-b">Tanggal</th>
                         <th class="p-4 border-b">Nama Staff</th>
                         <th class="p-4 border-b">Shift</th>
-                        <th class="p-4 border-b">Aktivitas</th>
-                        <th class="p-4 border-b">Jam Kejadian</th>
-                        <th class="p-4 border-b">Durasi Istirahat</th>
+                        <th class="p-4 border-b">Waktu Keluar</th>
+                        <th class="p-4 border-b">Waktu Masuk</th>
+                        <th class="p-4 border-b">Durasi Break</th>
+                        <th class="p-4 border-b text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="log-table-body" class="text-gray-700 text-sm divide-y divide-gray-100">
                     <tr id="empty-row">
-                        <td colspan="5" class="p-8 text-center text-gray-400">Belum ada aktivitas istirahat tercatat.</td>
+                        <td colspan="7" class="p-8 text-center text-gray-400">Belum ada aktivitas istirahat tercatat.</td>
                     </tr>
                 </tbody>
             </table>

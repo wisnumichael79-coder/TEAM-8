@@ -172,9 +172,11 @@ function deleteStaff(index) {
 }
 
 // ==========================================
-// PENCATATAN WAKTU ISTIRAHAT (BREAK OUT & IN)
+// PENCATATAN WAKTU ISTIRAHAT SATU BARIS (NEW)
 // ==========================================
-function doBreak(status) {
+
+// 1. Fungsi saat Staff Klik "MULAI ISTIRAHAT"
+function startBreak() {
     const nameSelect = document.getElementById('staff-name');
     if(!nameSelect) return;
     
@@ -191,62 +193,74 @@ function doBreak(status) {
     const staffShift = currentStaffData ? currentStaffData.shift : "Pagi";
 
     const now = new Date();
-    const currentTimeText = now.toLocaleTimeString('id-ID');
+    const currentDateText = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const currentTimeText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    
     const tableBody = document.getElementById('log-table-body');
     const emptyRow = document.getElementById('empty-row');
 
     if (emptyRow) emptyRow.remove();
 
-    let durationText = "-"; // Default saat mulai istirahat (BREAK OUT)
+    // Buat ID unik berbasis timestamp untuk baris ini agar bisa di-update nanti
+    const rowId = "break_" + now.getTime();
 
-    if (status === 'BREAK OUT') {
-        // Simpan waktu awal mulai istirahat staf ke memori browser
-        localStorage.setItem(`breakStart_${staffName}`, now.getTime());
-    } else if (status === 'BREAK IN') {
-        // Ambil waktu awal mulai istirahat saat staf kembali bekerja
-        const breakStartTime = localStorage.getItem(`breakStart_${staffName}`);
-        
-        if (breakStartTime) {
-            const timeDiff = now.getTime() - parseInt(breakStartTime);
-            const totalSeconds = Math.floor(timeDiff / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-
-            // Tampilkan berapa lama durasi istirahat mereka
-            durationText = `${hours}j ${minutes}m ${seconds}d`;
-            localStorage.removeItem(`breakStart_${staffName}`);
-        } else {
-            // Jika staf klik BREAK IN tanpa melakukan BREAK OUT dulu
-            alert(`Peringatan: ${staffName} belum mencatat MULAI ISTIRAHAT (BREAK OUT).`);
-            return;
-        }
-    }
-
-    // Buat baris data tabel baru
     const newRow = document.createElement('tr');
+    newRow.id = rowId;
     newRow.className = "hover:bg-slate-50 transition";
-
-    // Badge penanda aktivitas (Kuning untuk keluar istirahat, Hijau untuk kembali kerja)
-    const badgeClass = status === 'BREAK OUT' 
-        ? 'bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full text-xs font-semibold' 
-        : 'bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full text-xs font-semibold';
 
     const shiftBadgeClass = staffShift === 'Pagi'
         ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
         : 'bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium';
 
+    // Isi HTML Baris (Waktu masuk dan durasi dikosongkan dulu, beri tombol IN di ujung)
     newRow.innerHTML = `
+        <td class="p-4 text-gray-500 font-mono">${currentDateText}</td>
         <td class="p-4 font-medium text-gray-900">${staffName}</td>
         <td class="p-4"><span class="${shiftBadgeClass}">${staffShift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
-        <td class="p-4"><span class="${badgeClass}">${status === 'BREAK OUT' ? '☕ KELUAR BREAK' : '✅ MASUK BREAK'}</span></td>
-        <td class="p-4 text-gray-500 font-mono">${currentTimeText}</td>
-        <td class="p-4 text-slate-700 font-medium ${status === 'BREAK IN' ? 'text-blue-600' : ''}">${durationText}</td>
+        <td class="p-4 text-amber-600 font-mono font-semibold">${currentTimeText}</td>
+        <td class="p-4 text-gray-400 font-mono" id="time-in-${rowId}">-</td>
+        <td class="p-4 text-gray-400 font-medium" id="duration-${rowId}">-</td>
+        <td class="p-4 text-center" id="action-${rowId}">
+            <button onclick="endBreak('${rowId}', ${now.getTime()}, '${staffName}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">
+                MASUK BREAK (IN)
+            </button>
+        </td>
     `;
 
+    // Masukkan ke baris paling atas tabel
     tableBody.insertBefore(newRow, tableBody.firstChild);
-    nameSelect.value = ""; // Reset dropdown pilihan nama
-    alert(`Pencatatan ${status} sukses untuk: ${staffName}`);
+    nameSelect.value = ""; // Reset pilihan dropdown nama
+    alert(`${staffName} mulai istirahat pada jam ${currentTimeText}`);
+}
+
+// 2. Fungsi saat Tombol "MASUK BREAK (IN)" di Ujung Baris Diklik
+function endBreak(rowId, startTimeTimestamp, staffName) {
+    const now = new Date();
+    const timeInText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    // Hitung durasi selisih waktu
+    const timeDiff = now.getTime() - startTimeTimestamp;
+    const totalSeconds = Math.floor(timeDiff / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const durationText = `${hours}j ${minutes}m ${seconds}d`;
+
+    // Update elemen kolom di baris bersangkutan secara langsung
+    document.getElementById(`time-in-${rowId}`).innerText = timeInText;
+    document.getElementById(`time-in-${rowId}`).className = "p-4 text-emerald-600 font-mono font-semibold";
+    
+    document.getElementById(`duration-${rowId}`).innerText = durationText;
+    document.getElementById(`duration-${rowId}`).className = "p-4 text-blue-600 font-bold";
+
+    // Ubah tombol IN menjadi tanda Selesai/Checkmark agar tidak bisa diklik lagi
+    document.getElementById(`action-${rowId}`).innerHTML = `
+        <span class="text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1">
+            Done
+        </span>
+    `;
+
+    alert(`${staffName} telah kembali dari istirahat. Total durasi break: ${durationText}`);
 }
 
 function clearLogs() {
