@@ -21,11 +21,9 @@ document.addEventListener("DOMContentLoaded", () => {
 // PENGAMAN: PERBAIKI STRUKTUR DOM JIKA HILANG (ANTI LAYAR PUTIH)
 // ==========================================
 function repairMainDOMStructure() {
-    // Jika main-content tidak ada di index.html, kita buatkan struktur standarnya langsung lewat JS
     if (!document.getElementById("main-content")) {
         console.warn("Sistem mendeteksi id='main-content' hilang di index.html. Memperbaiki otomatis...");
         
-        // Cari container utama atau gunakan body langsung jika kosong
         let mainApp = document.getElementById("main-app");
         if (!mainApp) {
             mainApp = document.createElement("div");
@@ -34,13 +32,12 @@ function repairMainDOMStructure() {
             document.body.appendChild(mainApp);
         }
 
-        // Cetak struktur dashboard standard (Sidebar + Main Area)
         mainApp.innerHTML = `
             <aside class="w-64 bg-slate-900 text-white p-6 flex flex-col justify-between hidden md:flex">
                 <div>
                     <div class="flex items-center space-x-3 mb-8">
                         <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white">8</div>
-                        <span class="text-xl font-bold tracking-wider">TEAM 8</span>
+                        <span class="text-xl font-bold tracking-wider">TEAM 8 INTERNAL</span>
                     </div>
                     <nav class="space-y-2">
                         <button id="btn-dashboard" onclick="loadPage('dashboard')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition font-medium cursor-pointer">📂 Dashboard</button>
@@ -65,7 +62,7 @@ function repairMainDOMStructure() {
 }
 
 // ==========================================
-// INJEKSI ELEMEN LOGIN OTOMATIS (AGAR INDEX.HTML TETAP)
+// INJEKSI ELEMEN LOGIN OTOMATIS
 // ==========================================
 function injectLoginScreenHTML() {
     if (document.getElementById("login-screen")) return;
@@ -79,7 +76,7 @@ function injectLoginScreenHTML() {
                 <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-800">Sistem Absensi TEAM 8</h2>
+                <h2 class="text-2xl font-bold text-slate-800">TEAM 8 INTERNAL</h2>
                 <p class="text-sm text-slate-400 mt-1">Silakan masuk menggunakan akun Anda</p>
             </div>
             
@@ -216,10 +213,7 @@ function loadPage(pageName) {
     const mainContent = document.getElementById('main-content');
     const pageTitle = document.getElementById('page-title');
     
-    if (!mainContent) {
-        console.error("Gagal memuat halaman karena elemen main-content tidak ditemukan.");
-        return;
-    }
+    if (!mainContent) return;
 
     fetch(`${pageName}.html`)
         .then(response => {
@@ -610,19 +604,34 @@ function deleteSelectedLogs() {
 }
 
 // ==========================================
-// KONTROLLER CORE LOGIKA DASHBOARD
+// KONTROLLER CORE LOGIKA DASHBOARD (RANGE TANGGAL & EXCEL)
 // ==========================================
+let currentFilteredDataGlobal = []; // Menyimpan data terfilter untuk diunduh ke Excel
+
 function initDashboardFilters() {
-    const dateInput = document.getElementById('dash-filter-date');
+    const fromDateInput = document.getElementById('dash-filter-date-from');
+    const toDateInput = document.getElementById('dash-filter-date-to');
     const staffSelect = document.getElementById('dash-filter-staff');
-    
-    if (dateInput && !dateInput.value) {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        dateInput.value = `${year}-${month}-${day}`;
+    const btnExcelContainer = document.getElementById('excel-download-container');
+    const userRole = sessionStorage.getItem("team8_user_role");
+
+    // Tampilkan tombol unduh Excel hanya untuk ADMIN
+    if (btnExcelContainer) {
+        if (userRole === "admin") {
+            btnExcelContainer.classList.remove("hidden");
+        } else {
+            btnExcelContainer.classList.add("hidden");
+        }
     }
+
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+
+    if (fromDateInput && !fromDateInput.value) fromDateInput.value = todayStr;
+    if (toDateInput && !toDateInput.value) toDateInput.value = todayStr;
 
     if (staffSelect) {
         const staffList = getStaffFromStorage();
@@ -638,7 +647,9 @@ function initDashboardFilters() {
 
 function parseDateTime(dateStr, timeStr) {
     const [day, month, year] = dateStr.split('/').map(Number);
-    const [hours, minutes, seconds] = timeStr.split('.').map(Number);
+    // Mengakomodasi format jam dengan tanda titik (.) atau titik dua (:)
+    const standardizedTime = timeStr.replace(/\./g, ':');
+    const [hours, minutes, seconds] = standardizedTime.split(':').map(Number);
     return new Date(year, month - 1, day, hours, minutes, seconds || 0);
 }
 
@@ -646,25 +657,30 @@ function renderDashboard() {
     const tableBody = document.getElementById('dash-table-body');
     const totalDurationContainer = document.getElementById('dash-total-duration');
     const periodBadge = document.getElementById('dash-period-badge');
-    const filterDateVal = document.getElementById('dash-filter-date').value;
+    
+    const fromDateVal = document.getElementById('dash-filter-date-from').value;
+    const toDateVal = document.getElementById('dash-filter-date-to').value;
     const filterStaffVal = document.getElementById('dash-filter-staff').value;
 
-    if (!tableBody || !filterDateVal) return;
+    if (!tableBody || !fromDateVal || !toDateVal) return;
 
-    const [fYear, fMonth, fDay] = filterDateVal.split('-').map(Number);
+    // Set batas awal: Tanggal 'From' jam 06:30 pagi
+    const [fYear, fMonth, fDay] = fromDateVal.split('-').map(Number);
     const shiftStartLimit = new Date(fYear, fMonth - 1, fDay, 6, 30, 0);
     
-    const shiftEndLimit = new Date(fYear, fMonth - 1, fDay, 6, 30, 0);
+    // Set batas akhir: Tanggal 'To' + 1 hari jam 06:30 pagi
+    const [tYear, tMonth, tDay] = toDateVal.split('-').map(Number);
+    const shiftEndLimit = new Date(tYear, tMonth - 1, tDay, 6, 30, 0);
     shiftEndLimit.setDate(shiftEndLimit.getDate() + 1);
 
     if (periodBadge) {
-        periodBadge.innerText = `Shift: ${shiftStartLimit.toLocaleDateString('id-ID')} (06:30) s/d ${shiftEndLimit.toLocaleDateString('id-ID')} (06:30)`;
+        periodBadge.innerText = `Rentang Shift: ${shiftStartLimit.toLocaleDateString('id-ID')} (06:30) s/d ${shiftEndLimit.toLocaleDateString('id-ID')} (06:30)`;
     }
 
     const breakList = getBreaksFromStorage();
     tableBody.innerHTML = "";
     
-    let filteredRecords = [];
+    currentFilteredDataGlobal = [];
     let totalSecondsAccumulated = 0;
 
     breakList.forEach(item => {
@@ -673,7 +689,7 @@ function renderDashboard() {
         const itemActualDate = parseDateTime(item.date, item.timeOut);
 
         if (itemActualDate >= shiftStartLimit && itemActualDate < shiftEndLimit) {
-            filteredRecords.push(item);
+            currentFilteredDataGlobal.push(item);
             
             if (item.isDone && item.duration !== "-") {
                 const matchHours = item.duration.match(/(\d+)j/);
@@ -689,10 +705,11 @@ function renderDashboard() {
         }
     });
 
-    if (filteredRecords.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-400">Tidak ada riwayat istirahat staff pada rentang shift tanggal ini.</td></tr>`;
+    if (currentFilteredDataGlobal.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-400">Tidak ada riwayat istirahat staff pada rentang tanggal filter ini.</td></tr>`;
     } else {
-        filteredRecords.slice().reverse().forEach(item => {
+        // Tampilkan data urutan terbaru di atas
+        currentFilteredDataGlobal.slice().reverse().forEach(item => {
             const row = document.createElement('tr');
             row.className = "hover:bg-slate-50 transition";
             
@@ -718,4 +735,50 @@ function renderDashboard() {
         const s = totalSecondsAccumulated % 60;
         totalDurationContainer.innerText = `${h}j ${m}m ${s}d`;
     }
+}
+
+// ==========================================
+// FUNGSIONALITAS DOWNLOAD EXCEL (CSV FORMAT)
+// ==========================================
+function downloadDashboardExcel() {
+    if (sessionStorage.getItem("team8_user_role") !== "admin") {
+        alert("Akses Ditolak! Hanya Administrator yang dapat mendownload laporan excel.");
+        return;
+    }
+
+    if (currentFilteredDataGlobal.length === 0) {
+        alert("Tidak ada data terfilter untuk diunduh!");
+        return;
+    }
+
+    // Header Kolom Excel
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Tanggal,Nama Staff,Shift,Jam Keluar (OUT),Jam Masuk (IN),Durasi Istirahat\n";
+
+    // Isi Baris Data
+    currentFilteredDataGlobal.forEach(item => {
+        const rowData = [
+            item.date,
+            `"${item.name}"`,
+            item.shift,
+            item.timeOut,
+            item.timeIn,
+            item.duration
+        ];
+        csvContent += rowData.join(",") + "\n";
+    });
+
+    // Proses Download File oleh Browser Berformat .csv (Dapat dibuka langsung via Microsoft Excel)
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    
+    const fromDate = document.getElementById('dash-filter-date-from').value;
+    const toDate = document.getElementById('dash-filter-date-to').value;
+    
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Laporan_Break_TEAM8_${fromDate}_to_${toDate}.csv`);
+    document.body.appendChild(link);
+    
+    link.click();
+    document.body.removeChild(link);
 }
