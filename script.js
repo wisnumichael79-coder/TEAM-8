@@ -10,34 +10,86 @@ const STAFF_PASSWORD = "Aa131313";
 const SECURITY_PIN = "1234";
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Suntik struktur CSS & HTML Screen Login langsung lewat JS agar index.html tidak perlu diubah
+    injectLoginScreenHTML();
     checkLoginSession();
     startClock();
 });
 
 // ==========================================
+// INJEKSI ELEMEN LOGIN OTOMATIS
+// ==========================================
+function injectLoginScreenHTML() {
+    // Jika elemen login sudah ada, tidak perlu disuntik lagi
+    if (document.getElementById("login-screen")) return;
+
+    // Buat container untuk screen login overlay
+    const loginDiv = document.createElement("div");
+    loginDiv.id = "login-screen";
+    // Styling menggunakan kelas utilitas Tailwind
+    loginDiv.className = "fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900 px-4";
+    loginDiv.innerHTML = `
+        <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-slate-200 font-sans">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="lock" class="w-8 h-8"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Sistem Absensi TEAM 8</h2>
+                <p class="text-sm text-slate-400 mt-1">Silakan masuk menggunakan akun Anda</p>
+            </div>
+            
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">User ID</label>
+                    <input type="text" id="login-uid" placeholder="Masukkan User ID" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-900 bg-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                    <input type="password" id="login-password" placeholder="••••••••" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-900 bg-white">
+                </div>
+                <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold p-3 rounded-lg transition shadow-md flex justify-center items-center gap-2 mt-2 cursor-pointer">
+                    <span>Masuk Aplikasi</span>
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Pasang screen login ke bagian paling atas body HTML
+    document.body.appendChild(loginDiv);
+
+    // Tambahkan tombol logout di sidebar jika belum ada
+    setTimeout(() => {
+        injectLogoutButton();
+    }, 500);
+}
+
+function injectLogoutButton() {
+    const sidebar = document.querySelector("aside nav");
+    if (sidebar && !document.getElementById("btn-logout-js")) {
+        const logoutWrapper = document.createElement("div");
+        logoutWrapper.id = "btn-logout-js";
+        logoutWrapper.className = "pt-4 mt-4 border-t border-slate-800";
+        logoutWrapper.innerHTML = `
+            <button onclick="handleLogout()" class="flex items-center space-x-3 w-full p-3 rounded-lg text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 transition font-medium cursor-pointer">
+                <span>Keluar Sistem (Logout)</span>
+            </button>
+        `;
+        sidebar.parentElement.appendChild(logoutWrapper);
+    }
+}
+
+// ==========================================
 // LOGIKA PROSES AUTENTIKASI (LOGIN / LOGOUT)
 // ==========================================
-
 function checkLoginSession() {
     const isLogedIn = sessionStorage.getItem("team8_login_status");
     const loginScreen = document.getElementById("login-screen");
-    const mainApp = document.getElementById("main-app");
-    const userBadge = document.querySelector("header span");
 
     if (isLogedIn === "true") {
         if (loginScreen) loginScreen.classList.add("hidden");
-        if (mainApp) mainApp.classList.remove("hidden");
-        
-        // Ubah identitas nama login di pojok kanan atas topbar sesuai akun
-        if (userBadge) {
-            const currentRole = sessionStorage.getItem("team8_user_role");
-            userBadge.innerText = currentRole === "admin" ? "Administrator" : "Staff Karyawan";
-        }
-
         loadPage('dashboard');
     } else {
         if (loginScreen) loginScreen.classList.remove("hidden");
-        if (mainApp) mainApp.classList.add("hidden");
         if (window.lucide) lucide.createIcons();
     }
 }
@@ -53,13 +105,13 @@ function handleLogin() {
 
     if (uidInput === ADMIN_UID && passwordInput === ADMIN_PASSWORD) {
         sessionStorage.setItem("team8_login_status", "true");
-        sessionStorage.setItem("team8_user_role", "admin"); // Beri tanda akses admin
+        sessionStorage.setItem("team8_user_role", "admin");
         alert("Login Berhasil! Selamat Datang Admin.");
         clearLoginForm();
         checkLoginSession();
     } else if (uidInput === STAFF_UID && passwordInput === STAFF_PASSWORD) {
         sessionStorage.setItem("team8_login_status", "true");
-        sessionStorage.setItem("team8_user_role", "staff"); // Beri tanda akses staff murni
+        sessionStorage.setItem("team8_user_role", "staff");
         alert("Login Berhasil! Selamat Datang Staff.");
         clearLoginForm();
         checkLoginSession();
@@ -84,7 +136,6 @@ function handleLogout() {
 // ==========================================
 // KONTROLLER ROUTING SISTEM HALAMAN
 // ==========================================
-
 function loadPage(pageName) {
     if (sessionStorage.getItem("team8_login_status") !== "true") return;
 
@@ -105,7 +156,6 @@ function loadPage(pageName) {
 
             updateSidebarStyle(pageName);
             
-            // Pengendalian Tampilan Berdasarkan Hak Akses Role Login
             const userRole = sessionStorage.getItem("team8_user_role");
 
             if (pageName === 'dashboard') {
@@ -115,7 +165,7 @@ function loadPage(pageName) {
                 renderStaffDropdown();
                 renderBreakLogs(); 
                 
-                // Jika Role adalah Staff, Sembunyikan Tombol Hapus Log Terpilih & Header Kolom Centang
+                // Pembatasan Akses Staff di menu IN/OUT
                 if (userRole === "staff") {
                     const deleteLogBtn = document.getElementById("btn-delete-log-container");
                     const thCheckLog = document.getElementById("th-check-log");
@@ -123,7 +173,7 @@ function loadPage(pageName) {
                     if (thCheckLog) thCheckLog.classList.add("hidden");
                 }
             } else if (pageName === 'manajemen') {
-                // Jika yang masuk adalah Staff, Sembunyikan Form Tambah Staff & Kolom Aksi Hapus di Tabel
+                // Pembatasan Akses Staff di menu Manajemen Staff
                 if (userRole === "staff") {
                     const formTambah = document.getElementById("form-tambah-staff");
                     const tableContainer = document.getElementById("tabel-staff-container");
@@ -132,10 +182,8 @@ function loadPage(pageName) {
                     if (formTambah) formTambah.classList.add("hidden");
                     if (thAksiStaff) thAksiStaff.classList.add("hidden");
                     
-                    // Buat tabel mengambil porsi layar lebar penuh karena form kiri hilang
                     if (tableContainer) {
-                        tableContainer.classList.remove("lg:col-span-2");
-                        tableContainer.classList.add("lg:col-span-3");
+                        tableContainer.className = "w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden";
                     }
                 }
                 renderStaffTable();
@@ -144,7 +192,9 @@ function loadPage(pageName) {
             if (window.lucide) lucide.createIcons();
         })
         .catch(err => {
-            mainContent.innerHTML = `<p class="text-red-500 text-center py-10">Gagal memuat halaman: ${err.message}</p>`;
+            if (mainContent) {
+                mainContent.innerHTML = `<p class="text-red-500 text-center py-10">Gagal memuat halaman: ${err.message}</p>`;
+            }
         });
 }
 
@@ -175,7 +225,6 @@ function startClock() {
 // ==========================================
 // LOGIKA DATABASE STAFF (LOCALSTORAGE)
 // ==========================================
-
 function getStaffFromStorage() {
     const staff = localStorage.getItem('team8_staff');
     return staff ? JSON.parse(staff) : [];
@@ -223,7 +272,6 @@ function renderStaffTable() {
             webDisplayHtml = `<span class="text-slate-600 font-medium">${staff.web}</span>`;
         }
 
-        // Jika user adalah staff murni, hilangkan kolom tombol hapus individu
         let tdAksiHtml = "";
         if (userRole !== "staff") {
             tdAksiHtml = `
@@ -244,8 +292,6 @@ function renderStaffTable() {
         `;
         tableBody.appendChild(row);
     });
-
-    if (window.lucide) lucide.createIcons();
 }
 
 function addStaff() {
@@ -285,7 +331,7 @@ function addStaff() {
 
 function deleteStaff(index) {
     if (sessionStorage.getItem("team8_user_role") === "staff") {
-        alert("Akses Ditolak! Staff tidak diizinkan menghapus data karyawan.");
+        alert("Akses Ditolak!");
         return;
     }
 
@@ -310,7 +356,6 @@ function deleteStaff(index) {
 // ==========================================
 // DATABASE RIWAYAT BREAK (LOCALSTORAGE)
 // ==========================================
-
 function getBreaksFromStorage() {
     const breaks = localStorage.getItem('team8_breaks');
     return breaks ? JSON.parse(breaks) : [];
@@ -352,13 +397,12 @@ function renderBreakLogs() {
             actionColumnHtml = `<span class="text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1">Done</span>`;
         } else {
             actionColumnHtml = `
-                <button onclick="endBreak('${item.id}', ${item.startTimestamp}, '${item.name}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">
+                <button onclick="endBreak('${item.id}', ${item.startTimestamp}, '${item.name}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition cursor-pointer">
                     MASUK BREAK (IN)
                 </button>
             `;
         }
 
-        // Hilangkan kolom td checkbox jika peran login adalah Staff biasa
         let tdCheckboxHtml = "";
         if (userRole !== "staff") {
             tdCheckboxHtml = `
@@ -380,8 +424,6 @@ function renderBreakLogs() {
         `;
         tableBody.appendChild(row);
     });
-
-    if (window.lucide) lucide.createIcons();
 }
 
 function toggleSelectAllLogs(masterCheckbox) {
@@ -460,7 +502,7 @@ function endBreak(rowId, startTimeTimestamp, staffName) {
 
 function deleteSelectedLogs() {
     if (sessionStorage.getItem("team8_user_role") === "staff") {
-        alert("Akses Ditolak! Akun staff tidak memiliki izin menghapus log riwayat.");
+        alert("Akses Ditolak!");
         return;
     }
 
@@ -473,7 +515,6 @@ function deleteSelectedLogs() {
 
     if (confirm(`Apakah Anda yakin ingin menghapus ${checkboxes.length} riwayat istirahat terpilih?`)) {
         const userPin = prompt("Masukkan PIN Keamanan untuk menghapus riwayat log:");
-        
         if (userPin === null) return;
 
         if (userPin === SECURITY_PIN) {
@@ -491,30 +532,9 @@ function deleteSelectedLogs() {
     }
 }
 
-function clearLogs() {
-    if (sessionStorage.getItem("team8_user_role") === "staff") {
-        alert("Akses Ditolak!");
-        return;
-    }
-
-    if (confirm("Apakah Anda yakin ingin menghapus seluruh riwayat secara permanen?")) {
-        const userPin = prompt("Masukkan PIN Keamanan untuk menghapus seluruh riwayat:");
-        if (userPin === null) return;
-
-        if (userPin === SECURITY_PIN) {
-            localStorage.removeItem('team8_breaks');
-            alert("Seluruh riwayat berhasil dibersihkan.");
-            renderBreakLogs();
-        } else {
-            alert("Gagal menghapus! PIN Keamanan SALAH.");
-        }
-    }
-}
-
 // ==========================================
 // KONTROLLER CORE LOGIKA DASHBOARD
 // ==========================================
-
 function initDashboardFilters() {
     const dateInput = document.getElementById('dash-filter-date');
     const staffSelect = document.getElementById('dash-filter-staff');
