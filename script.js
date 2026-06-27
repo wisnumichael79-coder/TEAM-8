@@ -10,11 +10,59 @@ const STAFF_PASSWORD = "Aa131313";
 const SECURITY_PIN = "1234";
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Suntik struktur CSS & HTML Screen Login langsung lewat JS agar index.html tidak perlu diubah
+    // Pastikan struktur dasar aplikasi ada sebelum memproses session
+    repairMainDOMStructure();
     injectLoginScreenHTML();
     checkLoginSession();
     startClock();
 });
+
+// ==========================================
+// PENGAMAN: PERBAIKI STRUKTUR DOM JIKA HILANG (ANTI LAYAR PUTIH)
+// ==========================================
+function repairMainDOMStructure() {
+    // Jika main-content tidak ada di index.html, kita buatkan struktur standarnya langsung lewat JS
+    if (!document.getElementById("main-content")) {
+        console.warn("Sistem mendeteksi id='main-content' hilang di index.html. Memperbaiki otomatis...");
+        
+        // Cari container utama atau gunakan body langsung jika kosong
+        let mainApp = document.getElementById("main-app");
+        if (!mainApp) {
+            mainApp = document.createElement("div");
+            mainApp.id = "main-app";
+            mainApp.className = "min-h-screen bg-slate-100 flex";
+            document.body.appendChild(mainApp);
+        }
+
+        // Cetak struktur dashboard standard (Sidebar + Main Area)
+        mainApp.innerHTML = `
+            <aside class="w-64 bg-slate-900 text-white p-6 flex flex-col justify-between hidden md:flex">
+                <div>
+                    <div class="flex items-center space-x-3 mb-8">
+                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white">8</div>
+                        <span class="text-xl font-bold tracking-wider">TEAM 8</span>
+                    </div>
+                    <nav class="space-y-2">
+                        <button id="btn-dashboard" onclick="loadPage('dashboard')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition font-medium cursor-pointer">📂 Dashboard</button>
+                        <button id="btn-inout" onclick="loadPage('inout')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition font-medium cursor-pointer">☕ Menu IN/OUT</button>
+                        <button id="btn-manajemen" onclick="loadPage('manajemen')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition font-medium cursor-pointer">👥 Manajemen Staff</button>
+                    </nav>
+                </div>
+            </aside>
+
+            <div class="flex-1 flex flex-col min-w-0">
+                <header class="bg-white border-b border-slate-200 p-4 flex justify-between items-center shadow-sm">
+                    <h1 id="page-title" class="text-xl font-bold text-slate-800">Dashboard</h1>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">Loading...</span>
+                    </div>
+                </header>
+                <main id="main-content" class="p-6 flex-1 overflow-y-auto">
+                    </main>
+            </div>
+        `;
+    }
+}
 
 // ==========================================
 // INJEKSI ELEMEN LOGIN OTOMATIS (AGAR INDEX.HTML TETAP)
@@ -89,9 +137,12 @@ function checkLoginSession() {
     const isLogedIn = sessionStorage.getItem("team8_login_status");
     const loginScreen = document.getElementById("login-screen");
     const userBadge = document.querySelector("header span");
+    const mainApp = document.getElementById("main-app");
 
     if (isLogedIn === "true") {
         if (loginScreen) loginScreen.classList.add("hidden");
+        if (mainApp) mainApp.classList.remove("hidden");
+        
         if (userBadge) {
             const currentRole = sessionStorage.getItem("team8_user_role");
             userBadge.innerText = currentRole === "admin" ? "Administrator" : "Staff Karyawan";
@@ -99,6 +150,7 @@ function checkLoginSession() {
         loadPage('dashboard');
     } else {
         if (loginScreen) loginScreen.classList.remove("hidden");
+        if (mainApp) mainApp.classList.add("hidden");
         if (window.lucide) lucide.createIcons();
     }
 }
@@ -107,10 +159,7 @@ function handleLogin() {
     const uidElement = document.getElementById("login-uid");
     const passwordElement = document.getElementById("login-password");
 
-    if (!uidElement || !passwordElement) {
-        alert("Elemen login terhambat. Silakan klik tombol bypass di bawah form.");
-        return;
-    }
+    if (!uidElement || !passwordElement) return;
 
     const uidInput = uidElement.value.trim();
     const passwordInput = passwordElement.value;
@@ -167,6 +216,11 @@ function loadPage(pageName) {
     const mainContent = document.getElementById('main-content');
     const pageTitle = document.getElementById('page-title');
     
+    if (!mainContent) {
+        console.error("Gagal memuat halaman karena elemen main-content tidak ditemukan.");
+        return;
+    }
+
     fetch(`${pageName}.html`)
         .then(response => {
             if (!response.ok) throw new Error("Halaman tidak ditemukan");
@@ -175,9 +229,11 @@ function loadPage(pageName) {
         .then(html => {
             mainContent.innerHTML = html;
             
-            if(pageName === 'dashboard') pageTitle.innerText = 'Dashboard';
-            else if(pageName === 'inout') pageTitle.innerText = 'Menu IN/OUT';
-            else if(pageName === 'manajemen') pageTitle.innerText = 'Manajemen Staff';
+            if(pageTitle) {
+                if(pageName === 'dashboard') pageTitle.innerText = 'Dashboard';
+                else if(pageName === 'inout') pageTitle.innerText = 'Menu IN/OUT';
+                else if(pageName === 'manajemen') pageTitle.innerText = 'Manajemen Staff';
+            }
 
             updateSidebarStyle(pageName);
             
@@ -190,7 +246,6 @@ function loadPage(pageName) {
                 renderStaffDropdown();
                 renderBreakLogs(); 
                 
-                // Pembatasan menu IN/OUT jika yang masuk adalah STAFF
                 if (userRole === "staff") {
                     const deleteLogBtn = document.getElementById("btn-delete-log-container");
                     const thCheckLog = document.getElementById("th-check-log");
@@ -198,7 +253,6 @@ function loadPage(pageName) {
                     if (thCheckLog) thCheckLog.classList.add("hidden");
                 }
             } else if (pageName === 'manajemen') {
-                // Pembatasan menu MANAJEMEN STAFF jika yang masuk adalah STAFF
                 if (userRole === "staff") {
                     const formTambah = document.getElementById("form-tambah-staff");
                     const tableContainer = document.getElementById("tabel-staff-container");
@@ -217,9 +271,7 @@ function loadPage(pageName) {
             if (window.lucide) lucide.createIcons();
         })
         .catch(err => {
-            if (mainContent) {
-                mainContent.innerHTML = `<p class="text-red-500 text-center py-10">Gagal memuat halaman: ${err.message}</p>`;
-            }
+            mainContent.innerHTML = `<p class="text-red-500 text-center py-10">Gagal memuat sub-halaman: ${err.message}. Pastikan file '${pageName}.html' berada di folder yang sama.</p>`;
         });
 }
 
@@ -458,7 +510,6 @@ function toggleSelectAllLogs(masterCheckbox) {
     });
 }
 
-// Trigger pencatatan istirahat saat tombol diklik
 function startBreak() {
     const nameSelect = document.getElementById('staff-name');
     if(!nameSelect) return;
