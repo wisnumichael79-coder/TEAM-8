@@ -27,13 +27,19 @@
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="p-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-            <h3 class="font-semibold text-gray-800">Riwayat Istirahat Hari Ini</h3>
-            <button onclick="clearLogs()" class="text-sm text-rose-600 hover:underline">Hapus Log</button>
+            <h3 class="font-semibold text-gray-800">Riwayat Istirahat Terdata</h3>
+            <button onclick="deleteSelectedLogs()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 text-sm font-semibold px-4 py-2 rounded-lg flex items-center space-x-1 transition">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                <span>Hapus Data Terpilih</span>
+            </button>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-slate-50 text-slate-600 text-sm uppercase font-semibold">
+                        <th class="p-4 border-b w-12 text-center">
+                            <input type="checkbox" id="check-all-logs" onclick="toggleSelectAllLogs(this)" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        </th>
                         <th class="p-4 border-b">Tanggal</th>
                         <th class="p-4 border-b">Nama Staff</th>
                         <th class="p-4 border-b">Shift</th>
@@ -45,7 +51,7 @@
                 </thead>
                 <tbody id="log-table-body" class="text-gray-700 text-sm divide-y divide-gray-100">
                     <tr id="empty-row">
-                        <td colspan="7" class="p-8 text-center text-gray-400">Belum ada aktivitas istirahat tercatat.</td>
+                        <td colspan="8" class="p-8 text-center text-gray-400">Belum ada aktivitas istirahat tercatat.</td>
                     </tr>
                 </tbody>
             </table>

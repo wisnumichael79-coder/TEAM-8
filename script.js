@@ -172,7 +172,7 @@ function deleteStaff(index) {
 }
 
 // ==========================================
-// DATABASE RIWAYAT BREAK (LOCALSTORAGE)
+// DATABASE RIWAYAT BREAK (LOCALSTORAGE + CENTANG HAPUS + PIN)
 // ==========================================
 
 function getBreaksFromStorage() {
@@ -180,7 +180,7 @@ function getBreaksFromStorage() {
     return breaks ? JSON.parse(breaks) : [];
 }
 
-// Fungsi menampilkan data riwayat dari LocalStorage ke Tabel
+// 1. Fungsi Tampilkan Log Riwayat Kerja ke Tabel dengan Checkbox
 function renderBreakLogs() {
     const tableBody = document.getElementById('log-table-body');
     if (!tableBody) return;
@@ -188,12 +188,16 @@ function renderBreakLogs() {
     const breakList = getBreaksFromStorage();
     tableBody.innerHTML = "";
 
+    // Reset tombol master checkbox di header ke posisi tidak tercentang
+    const checkAllBox = document.getElementById('check-all-logs');
+    if (checkAllBox) checkAllBox.checked = false;
+
     if (breakList.length === 0) {
-        tableBody.innerHTML = `<tr id="empty-row"><td colspan="7" class="p-8 text-center text-gray-400">Belum ada aktivitas istirahat tercatat.</td></tr>`;
+        tableBody.innerHTML = `<tr id="empty-row"><td colspan="8" class="p-8 text-center text-gray-400">Belum ada aktivitas istirahat tercatat.</td></tr>`;
         return;
     }
 
-    // Tampilkan dari data terbaru (paling atas)
+    // Render dari data paling baru (Reverse)
     breakList.slice().reverse().forEach((item) => {
         const row = document.createElement('tr');
         row.id = item.id;
@@ -207,7 +211,6 @@ function renderBreakLogs() {
         let timeInClass = "p-4 text-gray-400 font-mono";
         let durationClass = "p-4 text-gray-400 font-medium";
 
-        // Cek jika statusnya sudah selesai (Done) atau masih menggantung tombol IN
         if (item.isDone) {
             timeInClass = "p-4 text-emerald-600 font-mono font-semibold";
             durationClass = "p-4 text-blue-600 font-bold";
@@ -221,6 +224,9 @@ function renderBreakLogs() {
         }
 
         row.innerHTML = `
+            <td class="p-4 text-center">
+                <input type="checkbox" name="log-select" value="${item.id}" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+            </td>
             <td class="p-4 text-gray-500 font-mono">${item.date}</td>
             <td class="p-4 font-medium text-gray-900">${item.name}</td>
             <td class="p-4"><span class="${shiftBadgeClass}">${item.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
@@ -231,9 +237,19 @@ function renderBreakLogs() {
         `;
         tableBody.appendChild(row);
     });
+
+    if (window.lucide) lucide.createIcons();
 }
 
-// 1. Fungsi saat Staff Klik "MULAI ISTIRAHAT"
+// 2. Fungsi Master Checkbox (Centang Semua Sekaligus)
+function toggleSelectAllLogs(masterCheckbox) {
+    const checkboxes = document.querySelectorAll('input[name="log-select"]');
+    checkboxes.forEach(cb => {
+        cb.checked = masterCheckbox.checked;
+    });
+}
+
+// 3. Fungsi Aksi Memulai Istirahat (BREAK OUT)
 function startBreak() {
     const nameSelect = document.getElementById('staff-name');
     if(!nameSelect) return;
@@ -255,7 +271,6 @@ function startBreak() {
     
     const rowId = "break_" + now.getTime();
 
-    // Simpan objek data baru ke LocalStorage
     const breakList = getBreaksFromStorage();
     const newRecord = {
         id: rowId,
@@ -274,10 +289,10 @@ function startBreak() {
 
     nameSelect.value = ""; 
     alert(`${staffName} mulai istirahat pada jam ${currentTimeText}`);
-    renderBreakLogs(); // Render ulang tabel dari database lokal
+    renderBreakLogs();
 }
 
-// 2. Fungsi saat Tombol "MASUK BREAK (IN)" Diklik
+// 4. Fungsi Mengakhiri Istirahat (BREAK IN)
 function endBreak(rowId, startTimeTimestamp, staffName) {
     const now = new Date();
     const timeInText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -289,7 +304,6 @@ function endBreak(rowId, startTimeTimestamp, staffName) {
     const seconds = totalSeconds % 60;
     const durationText = `${hours}j ${minutes}m ${seconds}d`;
 
-    // Perbarui datanya di dalam database LocalStorage
     const breakList = getBreaksFromStorage();
     const recordIndex = breakList.findIndex(item => item.id === rowId);
     
@@ -301,12 +315,41 @@ function endBreak(rowId, startTimeTimestamp, staffName) {
     }
 
     alert(`${staffName} telah kembali dari istirahat. Total durasi break: ${durationText}`);
-    renderBreakLogs(); // Render ulang tampilan tabel agar datanya sinkron berkala
+    renderBreakLogs();
 }
 
-function clearLogs() {
-    if(confirm("Apakah Anda yakin ingin menghapus semua riwayat absen dari sistem secara permanen?")) {
-        localStorage.removeItem('team8_breaks');
-        renderBreakLogs();
+// 5. Fungsi Hapus Riwayat Terpilih + Validasi Masukkan PIN Keamanan
+function deleteSelectedLogs() {
+    const checkboxes = document.querySelectorAll('input[name="log-select"]:checked');
+    
+    if (checkboxes.length === 0) {
+        alert("Silakan centang minimal satu baris riwayat yang ingin dihapus!");
+        return;
+    }
+
+    // Konfirmasi jumlah item yang akan dihapus
+    if (confirm(`Apakah Anda yakin ingin menghapus ${checkboxes.length} riwayat istirahat terpilih?`)) {
+        // Proteksi Input PIN Keamanan
+        const userPin = prompt("Masukkan PIN Keamanan untuk menghapus riwayat log:");
+        
+        if (userPin === null) return; // Batal jika tekan Cancel
+
+        if (userPin === SECURITY_PIN) {
+            // Ambil daftar semua ID log yang dicentang oleh user
+            const idsToDelete = Array.from(checkboxes).map(cb => cb.value);
+            
+            let breakList = getBreaksFromStorage();
+            
+            // Filter database lokal untuk menyisihkan/membuang ID yang dicentang
+            breakList = breakList.filter(item => !idsToDelete.includes(item.id));
+            
+            // Simpan kembali data bersih ke LocalStorage
+            localStorage.setItem('team8_breaks', JSON.stringify(breakList));
+            
+            alert("Data riwayat log terpilih berhasil dihapus.");
+            renderBreakLogs(); // Gambar ulang tabel riwayat
+        } else {
+            alert("Gagal menghapus log! PIN Keamanan yang Anda masukkan SALAH.");
+        }
     }
 }
