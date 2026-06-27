@@ -106,21 +106,17 @@ function renderStaffTable() {
             ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
             : 'bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium';
 
-        let webLinkHtml = `<span class="text-gray-400">-</span>`;
+        // Hanya menampilkan teks nama web saja, bukan tautan link aktif
+        let webDisplayHtml = `<span class="text-gray-400">-</span>`;
         if (staff.web && staff.web !== "") {
-            const targetUrl = staff.web.startsWith('http') ? staff.web : `https://${staff.web}`;
-            webLinkHtml = `
-                <a href="${targetUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 font-medium">
-                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Kunjungi
-                </a>
-            `;
+            webDisplayHtml = `<span class="text-slate-600 font-medium">${staff.web}</span>`;
         }
 
         row.innerHTML = `
             <td class="p-4 font-medium text-gray-900">${staff.name}</td>
             <td class="p-4 text-gray-500">${staff.role}</td>
             <td class="p-4"><span class="${shiftBadgeClass}">${staff.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
-            <td class="p-4">${webLinkHtml}</td>
+            <td class="p-4">${webDisplayHtml}</td>
             <td class="p-4 text-center">
                 <button onclick="deleteStaff(${index})" class="text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg text-xs font-medium transition">
                     Hapus
