@@ -9,7 +9,7 @@ const STAFF_PASSWORD = "Aa131313";
 
 const SECURITY_PIN = "1234";
 
-// TEMPELKAN KODE KONFIGURASI FIREBASE ANDA DI SINI
+// SALIN KONFIGURASI DI BAWAH INI DARI FIREBASE CONSOLE ANDA
 const firebaseConfig = {
   apiKey: "AIzaSyCGHA916aRAHTcBJwtk-6-nFUpzJ08BpQQ",
   authDomain: "team8-absensi.firebaseapp.com",
@@ -20,7 +20,7 @@ const firebaseConfig = {
   appId: "1:456282987112:web:ba8fce55db59985acb39dd"
 };
 
-// Jalankan Inisialisasi Firebase Koneksi Cloud
+// Inisialisasi Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
@@ -436,16 +436,47 @@ function deleteStaffOnline(staffId, staffName) {
 }
 
 // ==========================================
+// LOGIKA REASON DROPDOWN CONTROL (BARU)
+// ==========================================
+function toggleCustomReasonInput() {
+    const reasonSelect = document.getElementById('break-reason');
+    const customContainer = document.getElementById('custom-reason-container');
+    
+    if (reasonSelect && customContainer) {
+        if (reasonSelect.value === 'Lainnya') {
+            customContainer.classList.remove('hidden');
+        } else {
+            customContainer.classList.add('hidden');
+            const customInput = document.getElementById('custom-reason');
+            if (customInput) customInput.value = "";
+        }
+    }
+}
+
+// ==========================================
 // ONLINE ENGINE: LOG AKTIVITAS BREAK (FIREBASE)
 // ==========================================
 function startBreak() {
     const nameSelect = document.getElementById('staff-name');
+    const reasonSelect = document.getElementById('break-reason');
+    const customInput = document.getElementById('custom-reason');
+    
     if(!nameSelect) return;
     const staffName = nameSelect.value;
 
     if (!staffName) {
         alert("Silakan pilih nama Staff terlebih dahulu!");
         return;
+    }
+
+    let finalReason = reasonSelect ? reasonSelect.value : "Rokok";
+    if (finalReason === 'Lainnya') {
+        const customText = customInput ? customInput.value.trim() : "";
+        if (customText === "") {
+            alert("Harap ketik alasan keluar Anda karena memilih opsi 'Lainnya'!");
+            return;
+        }
+        finalReason = customText;
     }
 
     database.ref('staff').once('value', (snapshot) => {
@@ -466,6 +497,7 @@ function startBreak() {
             date: currentDateText,
             name: staffName,
             shift: staffShift,
+            reason: finalReason,
             timeOut: currentTimeText,
             timeIn: "-",
             duration: "-",
@@ -473,7 +505,13 @@ function startBreak() {
             isDone: false
         }).then(() => {
             nameSelect.value = ""; 
-            alert(`${staffName} mulai istirahat (Data tersimpan di Firebase).`);
+            if (reasonSelect) reasonSelect.value = "Rokok";
+            if (customInput) customInput.value = "";
+            if (document.getElementById('custom-reason-container')) {
+                document.getElementById('custom-reason-container').classList.add('hidden');
+            }
+            
+            alert(`${staffName} mulai istirahat dengan alasan [${finalReason}].`);
             renderBreakLogs();
         });
     });
@@ -505,13 +543,13 @@ function renderBreakLogs() {
     if (!tableBody) return;
 
     const userRole = sessionStorage.getItem("team8_user_role");
-    tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-gray-400">Sinkronisasi riwayat cloud...</td></tr>`;
+    const maxCol = userRole === "staff" ? 8 : 9;
+    tableBody.innerHTML = `<tr><td colspan="${maxCol}" class="p-8 text-center text-gray-400">Sinkronisasi riwayat cloud...</td></tr>`;
 
     database.ref('breaks').once('value', (snapshot) => {
         tableBody.innerHTML = "";
         
         if (!snapshot.exists()) {
-            const maxCol = userRole === "staff" ? 7 : 8;
             tableBody.innerHTML = `<tr id="empty-row"><td colspan="${maxCol}" class="p-8 text-center text-gray-400">Belum ada aktivitas istirahat tercatat.</td></tr>`;
             return;
         }
@@ -548,10 +586,11 @@ function renderBreakLogs() {
                 <td class="p-4 text-gray-500 font-mono">${item.date}</td>
                 <td class="p-4 font-medium text-gray-900">${item.name}</td>
                 <td class="p-4"><span class="${shiftBadgeClass}">${item.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
+                <td class="p-4 text-slate-700 font-medium">${item.reason || 'Rokok'}</td>
                 <td class="p-4 text-amber-600 font-mono font-semibold">${item.timeOut}</td>
                 <td class="p-4 ${item.isDone ? 'text-emerald-600 font-semibold' : 'text-gray-400'} font-mono">${item.timeIn}</td>
                 <td class="p-4 ${item.isDone ? 'text-blue-600 font-bold' : 'text-gray-400'}">${item.duration}</td>
-                <td class="p-4 text-center" id="action-${item.id}">${actionColumnHtml}</td>
+                <td class="p-4 text-center">${actionColumnHtml}</td>
             `;
             tableBody.appendChild(row);
         });
@@ -714,12 +753,13 @@ function renderDashboard() {
     });
 }
 
+// Catatan: Jika ingin menampilkan kolom Alasan di file CSV Excel admin, baris cetak di bawah ini juga bisa disesuaikan
 function downloadDashboardExcel() {
     if (sessionStorage.getItem("team8_user_role") !== "admin" || currentFilteredDataGlobal.length === 0) return;
 
-    let csvContent = "data:text/csv;charset=utf-8,Tanggal,Nama Staff,Shift,Jam Keluar (OUT),Jam Masuk (IN),Durasi Istirahat\n";
+    let csvContent = "data:text/csv;charset=utf-8,Tanggal,Nama Staff,Shift,Alasan,Jam Keluar (OUT),Jam Masuk (IN),Durasi Istirahat\n";
     currentFilteredDataGlobal.forEach(item => {
-        csvContent += `${item.date},"${item.name}",${item.shift},${item.timeOut},${item.timeIn},${item.duration}\n`;
+        csvContent += `${item.date},"${item.name}",${item.shift},"${item.reason || 'Rokok'}",${item.timeOut},${item.timeIn},${item.duration}\n`;
     });
 
     const link = document.createElement("a");
