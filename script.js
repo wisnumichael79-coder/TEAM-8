@@ -172,9 +172,9 @@ function deleteStaff(index) {
 }
 
 // ==========================================
-// PENCATATAN ABSEN IN / OUT
+// PENCATATAN WAKTU ISTIRAHAT (BREAK OUT & IN)
 // ==========================================
-function doAbsen(status) {
+function doBreak(status) {
     const nameSelect = document.getElementById('staff-name');
     if(!nameSelect) return;
     
@@ -185,7 +185,7 @@ function doAbsen(status) {
         return;
     }
 
-    // Cari tahu data shift staff ini berdasarkan database lokal
+    // Ambil data shift staff dari database lokal
     const staffList = getStaffFromStorage();
     const currentStaffData = staffList.find(s => s.name === staffName);
     const staffShift = currentStaffData ? currentStaffData.shift : "Pagi";
@@ -197,34 +197,40 @@ function doAbsen(status) {
 
     if (emptyRow) emptyRow.remove();
 
-    let durationText = "-";
+    let durationText = "-"; // Default saat mulai istirahat (BREAK OUT)
 
-    if (status === 'IN') {
-        localStorage.setItem(`checkIn_${staffName}`, now.getTime());
-    } else if (status === 'OUT') {
-        const checkInTime = localStorage.getItem(`checkIn_${staffName}`);
+    if (status === 'BREAK OUT') {
+        // Simpan waktu awal mulai istirahat staf ke memori browser
+        localStorage.setItem(`breakStart_${staffName}`, now.getTime());
+    } else if (status === 'BREAK IN') {
+        // Ambil waktu awal mulai istirahat saat staf kembali bekerja
+        const breakStartTime = localStorage.getItem(`breakStart_${staffName}`);
         
-        if (checkInTime) {
-            const timeDiff = now.getTime() - parseInt(checkInTime);
+        if (breakStartTime) {
+            const timeDiff = now.getTime() - parseInt(breakStartTime);
             const totalSeconds = Math.floor(timeDiff / 1000);
             const hours = Math.floor(totalSeconds / 3600);
             const minutes = Math.floor((totalSeconds % 3600) / 60);
             const seconds = totalSeconds % 60;
 
+            // Tampilkan berapa lama durasi istirahat mereka
             durationText = `${hours}j ${minutes}m ${seconds}d`;
-            localStorage.removeItem(`checkIn_${staffName}`);
+            localStorage.removeItem(`breakStart_${staffName}`);
         } else {
-            alert(`Peringatan: ${staffName} belum melakukan ABSEN MASUK (IN) hari ini.`);
+            // Jika staf klik BREAK IN tanpa melakukan BREAK OUT dulu
+            alert(`Peringatan: ${staffName} belum mencatat MULAI ISTIRAHAT (BREAK OUT).`);
             return;
         }
     }
 
+    // Buat baris data tabel baru
     const newRow = document.createElement('tr');
     newRow.className = "hover:bg-slate-50 transition";
 
-    const badgeClass = status === 'IN' 
-        ? 'bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full text-xs font-semibold' 
-        : 'bg-rose-100 text-rose-800 px-2.5 py-1 rounded-full text-xs font-semibold';
+    // Badge penanda aktivitas (Kuning untuk keluar istirahat, Hijau untuk kembali kerja)
+    const badgeClass = status === 'BREAK OUT' 
+        ? 'bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full text-xs font-semibold' 
+        : 'bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full text-xs font-semibold';
 
     const shiftBadgeClass = staffShift === 'Pagi'
         ? 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium'
@@ -233,14 +239,14 @@ function doAbsen(status) {
     newRow.innerHTML = `
         <td class="p-4 font-medium text-gray-900">${staffName}</td>
         <td class="p-4"><span class="${shiftBadgeClass}">${staffShift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
-        <td class="p-4"><span class="${badgeClass}">${status === 'IN' ? 'MASUK (IN)' : 'KELUAR (OUT)'}</span></td>
+        <td class="p-4"><span class="${badgeClass}">${status === 'BREAK OUT' ? '☕ KELUAR BREAK' : '✅ MASUK BREAK'}</span></td>
         <td class="p-4 text-gray-500 font-mono">${currentTimeText}</td>
-        <td class="p-4 text-slate-700 font-medium">${durationText}</td>
+        <td class="p-4 text-slate-700 font-medium ${status === 'BREAK IN' ? 'text-blue-600' : ''}">${durationText}</td>
     `;
 
     tableBody.insertBefore(newRow, tableBody.firstChild);
-    nameSelect.value = "";
-    alert(`Absen ${status} sukses untuk: ${staffName}`);
+    nameSelect.value = ""; // Reset dropdown pilihan nama
+    alert(`Pencatatan ${status} sukses untuk: ${staffName}`);
 }
 
 function clearLogs() {

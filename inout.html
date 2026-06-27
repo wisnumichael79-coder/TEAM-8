@@ -1,6 +1,6 @@
 <div class="space-y-6">
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Pencatatan Kehadiran Staff</h2>
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Pencatatan Istirahat (Break) Staff</h2>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
@@ -18,20 +18,20 @@
         </div>
 
         <div class="flex gap-4">
-            <button onclick="doAbsen('IN')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium p-3 rounded-lg flex justify-center items-center space-x-2 transition shadow-sm">
-                <i data-lucide="check-circle"></i>
-                <span>ABSEN MASUK (IN)</span>
+            <button onclick="doBreak('BREAK OUT')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-medium p-3 rounded-lg flex justify-center items-center space-x-2 transition shadow-sm">
+                <i data-lucide="coffee"></i>
+                <span>MULAI ISTIRAHAT (BREAK OUT)</span>
             </button>
-            <button onclick="doAbsen('OUT')" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-medium p-3 rounded-lg flex justify-center items-center space-x-2 transition shadow-sm">
-                <i data-lucide="x-circle"></i>
-                <span>ABSEN KELUAR (OUT)</span>
+            <button onclick="doBreak('BREAK IN')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium p-3 rounded-lg flex justify-center items-center space-x-2 transition shadow-sm">
+                <i data-lucide="play-circle"></i>
+                <span>SELESAI ISTIRAHAT (BREAK IN)</span>
             </button>
         </div>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="p-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-            <h3 class="font-semibold text-gray-800">Riwayat Absen Hari Ini</h3>
+            <h3 class="font-semibold text-gray-800">Riwayat Istirahat Hari Ini</h3>
             <button onclick="clearLogs()" class="text-sm text-rose-600 hover:underline">Hapus Log</button>
         </div>
         <div class="overflow-x-auto">
@@ -40,14 +40,14 @@
                     <tr class="bg-slate-50 text-slate-600 text-sm uppercase font-semibold">
                         <th class="p-4 border-b">Nama Staff</th>
                         <th class="p-4 border-b">Shift</th>
-                        <th class="p-4 border-b">Status</th>
-                        <th class="p-4 border-b">Jam Absen</th>
-                        <th class="p-4 border-b">Durasi Kerja</th>
+                        <th class="p-4 border-b">Aktivitas</th>
+                        <th class="p-4 border-b">Jam Kejadian</th>
+                        <th class="p-4 border-b">Durasi Istirahat</th>
                     </tr>
                 </thead>
                 <tbody id="log-table-body" class="text-gray-700 text-sm divide-y divide-gray-100">
                     <tr id="empty-row">
-                        <td colspan="5" class="p-8 text-center text-gray-400">Belum ada data absensi masuk atau keluar.</td>
+                        <td colspan="5" class="p-8 text-center text-gray-400">Belum ada aktivitas istirahat tercatat.</td>
                     </tr>
                 </tbody>
             </table>
