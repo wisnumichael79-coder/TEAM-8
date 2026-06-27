@@ -9,15 +9,18 @@ const STAFF_PASSWORD = "Aa131313";
 
 const SECURITY_PIN = "1234";
 
+// JEMBATAN OTOMATIS KE GOOGLE SPREADSHEET ANDA
+const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbylIb8B24pLxOKkuihiigUtnA6Yj_nQFTl58SkoyiO2sfTOrNqhGM--80CjIEm87XiF/exec";
+
 // SALIN KONFIGURASI DI BAWAH INI DARI FIREBASE CONSOLE ANDA
 const firebaseConfig = {
-  apiKey: "AIzaSyCGHA916aRAHTcBJwtk-6-nFUpzJ08BpQQ",
-  authDomain: "team8-absensi.firebaseapp.com",
-  databaseURL: "https://team-8-internal-default-rtdb.asia-southeast1.firebasedatabase.app/",
-  projectId: "team8-absensi",
-  storageBucket: "team8-absensi.appspot.com",
-  messagingSenderId: "456282987112",
-  appId: "1:456282987112:web:ba8fce55db59985acb39dd"
+  apiKey: "AIzaSy...", // <-- Masukkan API Key Firebase Anda di sini
+  authDomain: "team-8-internal.firebaseapp.com",
+  databaseURL: "https://team-8-internal-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "team-8-internal",
+  storageBucket: "team-8-internal.appspot.com",
+  messagingSenderId: "...",
+  appId: "..."
 };
 
 // Inisialisasi Firebase
@@ -48,15 +51,28 @@ function repairMainDOMStructure() {
 
         mainApp.innerHTML = `
             <aside class="w-64 bg-slate-900 text-white p-6 flex flex-col justify-between hidden md:flex">
-                <div>
-                    <div class="flex items-center space-x-3 mb-8">
-                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white">8</div>
-                        <span class="text-xl font-bold tracking-wider">TEAM 8 INTERNAL</span>
+                <div class="space-y-6">
+                    <div class="flex items-center space-x-3 px-2 py-3 border-b border-slate-800">
+                        <div class="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">T8</div>
+                        <div>
+                            <h1 class="font-bold text-white text-sm tracking-wide">TEAM 8 INTERNAL</h1>
+                            <p class="text-xs text-emerald-400 font-medium flex items-center gap-1">Online</p>
+                        </div>
                     </div>
-                    <nav class="space-y-2">
-                        <button id="btn-dashboard" onclick="loadPage('dashboard')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition font-medium cursor-pointer">📂 Dashboard</button>
-                        <button id="btn-inout" onclick="loadPage('inout')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition font-medium cursor-pointer">☕ IN/OUT</button>
-                        <button id="btn-manajemen" onclick="loadPage('manajemen')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition font-medium cursor-pointer">👥 Manajemen Staff</button>
+                    
+                    <nav class="space-y-1">
+                        <button id="btn-dashboard" onclick="loadPage('dashboard')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                            <i data-lucide="layout-dashboard"></i>
+                            <span>Dashboard</span>
+                        </button>
+                        <button id="btn-inout" onclick="loadPage('inout')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                            <i data-lucide="coffee"></i>
+                            <span>IN/OUT</span>
+                        </button>
+                        <button id="btn-manajemen" onclick="loadPage('manajemen')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                            <i data-lucide="users"></i>
+                            <span>Manajemen Staff</span>
+                        </button>
                     </nav>
                 </div>
             </aside>
@@ -436,7 +452,7 @@ function deleteStaffOnline(staffId, staffName) {
 }
 
 // ==========================================
-// LOGIKA REASON DROPDOWN CONTROL (BARU)
+// LOGIKA REASON DROPDOWN CONTROL
 // ==========================================
 function toggleCustomReasonInput() {
     const reasonSelect = document.getElementById('break-reason');
@@ -453,9 +469,9 @@ function toggleCustomReasonInput() {
     }
 }
 
-// ==========================================
+// ==========================================================
 // ONLINE ENGINE: LOG AKTIVITAS BREAK (FIREBASE + GOOGLE SHEETS)
-// ==========================================
+// ==========================================================
 function startBreak() {
     const nameSelect = document.getElementById('staff-name');
     const reasonSelect = document.getElementById('break-reason');
@@ -509,7 +525,7 @@ function startBreak() {
         database.ref('breaks/' + rowId).set(dataPayload).then(() => {
             
             // 2. Kirim Data Awal Keluar (OUT) ke Google Sheets secara Real-time
-            fetch(GOOGLE_SHEET_URL, {https://script.google.com/macros/s/AKfycbylIb8B24pLxOKkuihiigUtnA6Yj_nQFTl58SkoyiO2sfTOrNqhGM--80CjIEm87XiF/exec
+            fetch(GOOGLE_SHEET_URL, {
                 method: "POST",
                 mode: "no-cors",
                 headers: { "Content-Type": "application/json" },
@@ -541,7 +557,7 @@ function endBreak(rowId, startTimeTimestamp, staffName) {
     const seconds = totalSeconds % 60;
     const durationText = `${hours}j ${minutes}m ${seconds}d`;
 
-    // Ambil data lama dari Firebase terlebih dahulu untuk mendapatkan data tanggal & shift asal
+    // Ambil data lama dari Firebase terlebih dahulu untuk menyinkronkan data tanggal & shift asal
     database.ref('breaks/' + rowId).once('value').then((snapshot) => {
         if (!snapshot.exists()) return;
         
@@ -565,8 +581,8 @@ function endBreak(rowId, startTimeTimestamp, staffName) {
             isDone: true
         }).then(() => {
             
-            // 2. Kirim Data Pembaruan Masuk (IN) sebagai baris riwayat baru di Google Sheets
-            fetch(GOOGLE_SHEET_URL, {https://script.google.com/macros/s/AKfycbylIb8B24pLxOKkuihiigUtnA6Yj_nQFTl58SkoyiO2sfTOrNqhGM--80CjIEm87XiF/exec
+            // 2. Kirim Data Pembaruan Masuk (IN) sebagai baris baru di Google Sheets
+            fetch(GOOGLE_SHEET_URL, {
                 method: "POST",
                 mode: "no-cors",
                 headers: { "Content-Type": "application/json" },
@@ -629,7 +645,7 @@ function renderBreakLogs() {
                 <td class="p-4"><span class="${shiftBadgeClass}">${item.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
                 <td class="p-4 text-slate-700 font-medium">${item.reason || 'Rokok'}</td>
                 <td class="p-4 text-amber-600 font-mono font-semibold">${item.timeOut}</td>
-                <td class="p-4 ${item.isDone ? 'text-emerald-600 font-semibold' : 'text-gray-400'} font-mono">${item.timeIn}</td>
+                <td class="p-4 ${item.isDone ? 'text-emerald-600' : 'text-gray-400'} font-mono">${item.timeIn}</td>
                 <td class="p-4 ${item.isDone ? 'text-blue-600 font-bold' : 'text-gray-400'}">${item.duration}</td>
                 <td class="p-4 text-center">${actionColumnHtml}</td>
             `;
@@ -794,7 +810,6 @@ function renderDashboard() {
     });
 }
 
-// Catatan: Jika ingin menampilkan kolom Alasan di file CSV Excel admin, baris cetak di bawah ini juga bisa disesuaikan
 function downloadDashboardExcel() {
     if (sessionStorage.getItem("team8_user_role") !== "admin" || currentFilteredDataGlobal.length === 0) return;
 
