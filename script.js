@@ -34,9 +34,6 @@ document.addEventListener("DOMContentLoaded", () => {
     startClock();
 });
 
-// ==========================================
-// PENGAMAN: PERBAIKI STRUKTUR DOM JIKA HILANG
-// ==========================================
 function repairMainDOMStructure() {
     if (!document.getElementById("main-content")) {
         console.warn("Sistem mendeteksi id='main-content' hilang. Memperbaiki otomatis...");
@@ -50,7 +47,6 @@ function repairMainDOMStructure() {
         }
 
         mainApp.innerHTML = `
-            <!-- Sidebar -->
             <aside class="w-64 bg-slate-900 text-white p-6 flex flex-col justify-between hidden md:flex">
                 <div class="space-y-6">
                     <div class="flex items-center space-x-3 px-2 py-3 border-b border-slate-800">
@@ -74,23 +70,23 @@ function repairMainDOMStructure() {
                             <i data-lucide="users"></i>
                             <span>Manajemen Staff</span>
                         </button>
+                        <button id="btn-absensi" onclick="loadPage('absensi')" class="flex items-center space-x-3 w-full p-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                            <i data-lucide="calendar-check"></i>
+                            <span>Absensi</span>
+                        </button>
                     </nav>
                 </div>
             </aside>
 
-            <!-- Konten Utama -->
             <div class="flex-1 flex flex-col min-w-0">
-                <!-- Topbar Header -->
                 <header class="bg-white border-b border-slate-200 p-4 flex justify-between items-center shadow-sm">
                     <h1 id="page-title" class="text-xl font-bold text-slate-800">Dashboard</h1>
                     <div class="flex items-center space-x-4">
-                        <span class="text-sm font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">Loading...</span>
+                        <span class="text-sm font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">Online</span>
                     </div>
                 </header>
-                <!-- Area Inject Halaman -->
                 <main id="main-content" class="p-6 flex-1 overflow-y-auto">
-                    <!-- HTML luar di-load di sini -->
-                </main>
+                    </main>
             </div>
         `;
     }
@@ -272,6 +268,7 @@ function loadPage(pageName) {
                 if(pageName === 'dashboard') pageTitle.innerText = 'Dashboard';
                 else if(pageName === 'inout') pageTitle.innerText = 'IN/OUT';
                 else if(pageName === 'manajemen') pageTitle.innerText = 'Manajemen Staff';
+                else if(pageName === 'absensi') pageTitle.innerText = 'Absensi Bulanan';
             }
 
             updateSidebarStyle(pageName);
@@ -317,7 +314,7 @@ function loadPage(pageName) {
 }
 
 function updateSidebarStyle(activePage) {
-    const menus = ['dashboard', 'inout', 'manajemen'];
+    const menus = ['dashboard', 'inout', 'manajemen', 'absensi']; // Tambahkan 'absensi' di sini
     menus.forEach(menu => {
         const btn = document.getElementById(`btn-${menu}`);
         if(btn) {
