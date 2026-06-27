@@ -1,8 +1,12 @@
 // ==========================================
-// KONFIGURASI KREDENSIAL KEAMANAN
+// KONFIGURASI KREDENSIAL KEAMANAN & AKUN
 // ==========================================
 const ADMIN_UID = "admin";
-const ADMIN_PASSWORD = "Aa131313";
+const ADMIN_PASSWORD = "micc1010";
+
+const STAFF_UID = "staff";
+const STAFF_PASSWORD = "Aa131313";
+
 const SECURITY_PIN = "1234";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -18,10 +22,18 @@ function checkLoginSession() {
     const isLogedIn = sessionStorage.getItem("team8_login_status");
     const loginScreen = document.getElementById("login-screen");
     const mainApp = document.getElementById("main-app");
+    const userBadge = document.querySelector("header span");
 
     if (isLogedIn === "true") {
         if (loginScreen) loginScreen.classList.add("hidden");
         if (mainApp) mainApp.classList.remove("hidden");
+        
+        // Ubah identitas nama login di pojok kanan atas topbar sesuai akun
+        if (userBadge) {
+            const currentRole = sessionStorage.getItem("team8_user_role");
+            userBadge.innerText = currentRole === "admin" ? "Administrator" : "Staff Karyawan";
+        }
+
         loadPage('dashboard');
     } else {
         if (loginScreen) loginScreen.classList.remove("hidden");
@@ -41,18 +53,30 @@ function handleLogin() {
 
     if (uidInput === ADMIN_UID && passwordInput === ADMIN_PASSWORD) {
         sessionStorage.setItem("team8_login_status", "true");
-        alert("Login Berhasil! Selamat Datang.");
-        document.getElementById("login-uid").value = "";
-        document.getElementById("login-password").value = "";
+        sessionStorage.setItem("team8_user_role", "admin"); // Beri tanda akses admin
+        alert("Login Berhasil! Selamat Datang Admin.");
+        clearLoginForm();
+        checkLoginSession();
+    } else if (uidInput === STAFF_UID && passwordInput === STAFF_PASSWORD) {
+        sessionStorage.setItem("team8_login_status", "true");
+        sessionStorage.setItem("team8_user_role", "staff"); // Beri tanda akses staff murni
+        alert("Login Berhasil! Selamat Datang Staff.");
+        clearLoginForm();
         checkLoginSession();
     } else {
         alert("Login Gagal! User ID atau Password yang Anda masukkan salah.");
     }
 }
 
+function clearLoginForm() {
+    document.getElementById("login-uid").value = "";
+    document.getElementById("login-password").value = "";
+}
+
 function handleLogout() {
     if (confirm("Apakah Anda yakin ingin keluar dari sistem?")) {
         sessionStorage.removeItem("team8_login_status");
+        sessionStorage.removeItem("team8_user_role");
         checkLoginSession();
     }
 }
@@ -81,13 +105,39 @@ function loadPage(pageName) {
 
             updateSidebarStyle(pageName);
             
+            // Pengendalian Tampilan Berdasarkan Hak Akses Role Login
+            const userRole = sessionStorage.getItem("team8_user_role");
+
             if (pageName === 'dashboard') {
                 initDashboardFilters();
                 renderDashboard();
             } else if (pageName === 'inout') {
                 renderStaffDropdown();
                 renderBreakLogs(); 
+                
+                // Jika Role adalah Staff, Sembunyikan Tombol Hapus Log Terpilih & Header Kolom Centang
+                if (userRole === "staff") {
+                    const deleteLogBtn = document.getElementById("btn-delete-log-container");
+                    const thCheckLog = document.getElementById("th-check-log");
+                    if (deleteLogBtn) deleteLogBtn.classList.add("hidden");
+                    if (thCheckLog) thCheckLog.classList.add("hidden");
+                }
             } else if (pageName === 'manajemen') {
+                // Jika yang masuk adalah Staff, Sembunyikan Form Tambah Staff & Kolom Aksi Hapus di Tabel
+                if (userRole === "staff") {
+                    const formTambah = document.getElementById("form-tambah-staff");
+                    const tableContainer = document.getElementById("tabel-staff-container");
+                    const thAksiStaff = document.getElementById("th-aksi-staff");
+
+                    if (formTambah) formTambah.classList.add("hidden");
+                    if (thAksiStaff) thAksiStaff.classList.add("hidden");
+                    
+                    // Buat tabel mengambil porsi layar lebar penuh karena form kiri hilang
+                    if (tableContainer) {
+                        tableContainer.classList.remove("lg:col-span-2");
+                        tableContainer.classList.add("lg:col-span-3");
+                    }
+                }
                 renderStaffTable();
             }
 
@@ -151,10 +201,12 @@ function renderStaffTable() {
     if (!tableBody) return;
 
     const staffList = getStaffFromStorage();
+    const userRole = sessionStorage.getItem("team8_user_role");
     tableBody.innerHTML = "";
 
     if (staffList.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400">Belum ada staff terdaftar. Silakan tambah di form sebelah kiri.</td></tr>`;
+        const maxCol = userRole === "staff" ? 4 : 5;
+        tableBody.innerHTML = `<tr><td colspan="${maxCol}" class="p-8 text-center text-gray-400">Belum ada staff terdaftar.</td></tr>`;
         return;
     }
 
@@ -171,16 +223,24 @@ function renderStaffTable() {
             webDisplayHtml = `<span class="text-slate-600 font-medium">${staff.web}</span>`;
         }
 
+        // Jika user adalah staff murni, hilangkan kolom tombol hapus individu
+        let tdAksiHtml = "";
+        if (userRole !== "staff") {
+            tdAksiHtml = `
+                <td class="p-4 text-center">
+                    <button onclick="deleteStaff(${index})" class="text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                        Hapus
+                    </button>
+                </td>
+            `;
+        }
+
         row.innerHTML = `
             <td class="p-4 font-medium text-gray-900">${staff.name}</td>
             <td class="p-4 text-gray-500">${staff.role}</td>
             <td class="p-4"><span class="${shiftBadgeClass}">${staff.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
             <td class="p-4">${webDisplayHtml}</td>
-            <td class="p-4 text-center">
-                <button onclick="deleteStaff(${index})" class="text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg text-xs font-medium transition">
-                    Hapus
-                </button>
-            </td>
+            ${tdAksiHtml}
         `;
         tableBody.appendChild(row);
     });
@@ -224,6 +284,11 @@ function addStaff() {
 }
 
 function deleteStaff(index) {
+    if (sessionStorage.getItem("team8_user_role") === "staff") {
+        alert("Akses Ditolak! Staff tidak diizinkan menghapus data karyawan.");
+        return;
+    }
+
     const staffList = getStaffFromStorage();
     const targetStaff = staffList[index];
 
@@ -256,13 +321,15 @@ function renderBreakLogs() {
     if (!tableBody) return;
 
     const breakList = getBreaksFromStorage();
+    const userRole = sessionStorage.getItem("team8_user_role");
     tableBody.innerHTML = "";
 
     const checkAllBox = document.getElementById('check-all-logs');
     if (checkAllBox) checkAllBox.checked = false;
 
     if (breakList.length === 0) {
-        tableBody.innerHTML = `<tr id="empty-row"><td colspan="8" class="p-8 text-center text-gray-400">Belum ada aktivitas istirahat tercatat.</td></tr>`;
+        const maxCol = userRole === "staff" ? 7 : 8;
+        tableBody.innerHTML = `<tr id="empty-row"><td colspan="${maxCol}" class="p-8 text-center text-gray-400">Belum ada aktivitas istirahat tercatat.</td></tr>`;
         return;
     }
 
@@ -291,10 +358,18 @@ function renderBreakLogs() {
             `;
         }
 
+        // Hilangkan kolom td checkbox jika peran login adalah Staff biasa
+        let tdCheckboxHtml = "";
+        if (userRole !== "staff") {
+            tdCheckboxHtml = `
+                <td class="p-4 text-center">
+                    <input type="checkbox" name="log-select" value="${item.id}" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                </td>
+            `;
+        }
+
         row.innerHTML = `
-            <td class="p-4 text-center">
-                <input type="checkbox" name="log-select" value="${item.id}" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-            </td>
+            ${tdCheckboxHtml}
             <td class="p-4 text-gray-500 font-mono">${item.date}</td>
             <td class="p-4 font-medium text-gray-900">${item.name}</td>
             <td class="p-4"><span class="${shiftBadgeClass}">${item.shift === 'Pagi' ? '🌅 Pagi' : '🌙 Malam'}</span></td>
@@ -384,6 +459,11 @@ function endBreak(rowId, startTimeTimestamp, staffName) {
 }
 
 function deleteSelectedLogs() {
+    if (sessionStorage.getItem("team8_user_role") === "staff") {
+        alert("Akses Ditolak! Akun staff tidak memiliki izin menghapus log riwayat.");
+        return;
+    }
+
     const checkboxes = document.querySelectorAll('input[name="log-select"]:checked');
     
     if (checkboxes.length === 0) {
@@ -412,6 +492,11 @@ function deleteSelectedLogs() {
 }
 
 function clearLogs() {
+    if (sessionStorage.getItem("team8_user_role") === "staff") {
+        alert("Akses Ditolak!");
+        return;
+    }
+
     if (confirm("Apakah Anda yakin ingin menghapus seluruh riwayat secara permanen?")) {
         const userPin = prompt("Masukkan PIN Keamanan untuk menghapus seluruh riwayat:");
         if (userPin === null) return;
@@ -427,10 +512,9 @@ function clearLogs() {
 }
 
 // ==========================================
-// KONTROLLER CORE LOGIKA DASHBOARD (NEW ENGINE)
+// KONTROLLER CORE LOGIKA DASHBOARD
 // ==========================================
 
-// Inisialisasi nilai default tanggal input & dropdown nama staff pada dashboard
 function initDashboardFilters() {
     const dateInput = document.getElementById('dash-filter-date');
     const staffSelect = document.getElementById('dash-filter-staff');
@@ -455,14 +539,12 @@ function initDashboardFilters() {
     }
 }
 
-// Helper untuk mengubah string "DD/MM/YYYY" dan "HH:MM:SS" dari log menjadi Objek Date utuh
 function parseDateTime(dateStr, timeStr) {
     const [day, month, year] = dateStr.split('/').map(Number);
-    const [hours, minutes, seconds] = timeStr.split('.').map(Number); // id-ID memakai separator titik (.)
+    const [hours, minutes, seconds] = timeStr.split('.').map(Number);
     return new Date(year, month - 1, day, hours, minutes, seconds || 0);
 }
 
-// Fungsi Render Utama Dashboard (Filter Akurat Berbasis Pembagian Shift Kerja)
 function renderDashboard() {
     const tableBody = document.getElementById('dash-table-body');
     const totalDurationContainer = document.getElementById('dash-total-duration');
@@ -472,14 +554,12 @@ function renderDashboard() {
 
     if (!tableBody || !filterDateVal) return;
 
-    // Definisikan range filter tanggal (Mulai dari 27 jam 06:30 pagi s/d 28 jam 06:30 pagi)
     const [fYear, fMonth, fDay] = filterDateVal.split('-').map(Number);
     const shiftStartLimit = new Date(fYear, fMonth - 1, fDay, 6, 30, 0);
     
     const shiftEndLimit = new Date(fYear, fMonth - 1, fDay, 6, 30, 0);
-    shiftEndLimit.setDate(shiftEndLimit.getDate() + 1); // Tambah 1 hari ke depan
+    shiftEndLimit.setDate(shiftEndLimit.getDate() + 1);
 
-    // Perbarui label rentang waktu operasional shift di UI
     if (periodBadge) {
         periodBadge.innerText = `Shift: ${shiftStartLimit.toLocaleDateString('id-ID')} (06:30) s/d ${shiftEndLimit.toLocaleDateString('id-ID')} (06:30)`;
     }
@@ -491,17 +571,13 @@ function renderDashboard() {
     let totalSecondsAccumulated = 0;
 
     breakList.forEach(item => {
-        // Abaikan data jika nama tidak cocok dengan filter staff terpilih
         if (filterStaffVal !== "ALL" && item.name !== filterStaffVal) return;
 
-        // Dapatkan representasi waktu asli dari kejadian BREAK OUT (Waktu Keluar)
         const itemActualDate = parseDateTime(item.date, item.timeOut);
 
-        // Filter Inti: Cek apakah waktu kejadian berada dalam batas range shift kerja
         if (itemActualDate >= shiftStartLimit && itemActualDate < shiftEndLimit) {
             filteredRecords.push(item);
             
-            // Hitung akumulasi detik jika status break sudah diselesaikan (isDone)
             if (item.isDone && item.duration !== "-") {
                 const matchHours = item.duration.match(/(\d+)j/);
                 const matchMinutes = item.duration.match(/(\d+)m/);
@@ -516,7 +592,6 @@ function renderDashboard() {
         }
     });
 
-    // Masukkan data hasil filter ke baris tabel dashboard
     if (filteredRecords.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-400">Tidak ada riwayat istirahat staff pada rentang shift tanggal ini.</td></tr>`;
     } else {
@@ -540,7 +615,6 @@ function renderDashboard() {
         });
     }
 
-    // Ubah akumulasi detik kembali ke format teks Jam Menit Detik di card rangkuman
     if (totalDurationContainer) {
         const h = Math.floor(totalSecondsAccumulated / 3600);
         const m = Math.floor((totalSecondsAccumulated % 3600) / 60);

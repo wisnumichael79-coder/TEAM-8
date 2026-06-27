@@ -1,5 +1,6 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
+    <!-- Form Tambah Staff (Akan disembunyikan jika yang login adalah Staff) -->
+    <div id="form-tambah-staff" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
         <h2 class="text-lg font-semibold text-gray-800 mb-4">Tambah Staff Baru</h2>
         <div class="space-y-4">
             <div>
@@ -11,8 +12,8 @@
                 <input type="text" id="new-staff-role" placeholder="Contoh: Staff Admin" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Web</label>
-                <input type="url" id="new-staff-web" placeholder="Contoh: Wisnu123" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Link Web / Portofolio</label>
+                <input type="text" id="new-staff-web" placeholder="Contoh: linkedin.com/in/username" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Shift Kerja Default</label>
@@ -28,7 +29,8 @@
         </div>
     </div>
 
-    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <!-- Tabel List Staff Terdaftar -->
+    <div id="tabel-staff-container" class="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="p-5 border-b border-gray-100 bg-gray-50">
             <h3 class="font-semibold text-gray-800">Daftar Karyawan Aktif</h3>
         </div>
@@ -40,11 +42,13 @@
                         <th class="p-4 border-b">Jabatan</th>
                         <th class="p-4 border-b">Shift</th>
                         <th class="p-4 border-b">Website</th>
-                        <th class="p-4 border-b text-center">Aksi</th>
+                        <!-- ID Header Aksi untuk dikontrol via JS -->
+                        <th id="th-aksi-staff" class="p-4 border-b text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="staff-table-body" class="text-gray-700 text-sm divide-y divide-gray-100">
-                    </tbody>
+                    <!-- Data di-load otomatis via JS -->
+                </tbody>
             </table>
         </div>
     </div>
