@@ -874,11 +874,11 @@ async function loadJadwal() {
         wrapper.className = "mb-8";
         wrapper.innerHTML = `<h3 class="bg-blue-900 text-white p-2 font-bold">${webName}</h3>`;
         
-        let table = `<table class="w-full text-sm border-collapse border border-slate-300">
+        let table = `<table class="min-w-max w-full text-sm border-collapse border border-slate-300">
             <thead class="bg-slate-100">
-                <tr><th class="p-2 border">NAMA</th>
-                ${Array.from({length: daysInMonth}, (_, i) => `<th class="p-1 border">${i+1}</th>`).join('')}
-                ${isAdmin ? '<th class="p-1 border">AKSI</th>' : ''}
+                <tr>
+                    <th class="w-40 p-2 border">NAMA</th> ${Array.from({length: daysInMonth}, (_, i) => `<th class="w-10 p-1 border">${i+1}</th>`).join('')}
+                    ${isAdmin ? '<th class="w-16 p-1 border">AKSI</th>' : ''}
                 </tr>
             </thead>
             <tbody></tbody>
