@@ -935,8 +935,8 @@ async function loadJadwal() {
             // Kolom Aksi
             if (isAdmin) {
                 rowHtml += `<td class="p-2 border text-center">
-                        <button onclick="enableEditMode('${staff.name}', this)" class="text-xl">✏️</button>
-                    </td>`;
+                    <button onclick="enableEditMode('${staff.name}', this)" class="text-xl">✏️</button>
+                </td>`;
             }
             
             row.innerHTML = rowHtml;
@@ -949,17 +949,19 @@ async function loadJadwal() {
 function enableEditMode(staffName, btn) {
     const row = btn.closest('tr');
     
-    // Sembunyikan semua div teks di baris ini
+    // 1. Sembunyikan semua div teks
     const textDivs = row.querySelectorAll('.jadwal-text');
     textDivs.forEach(div => div.classList.add('hidden'));
     
-    // Tampilkan semua select di baris ini
+    // 2. Tampilkan semua select
     const selects = row.querySelectorAll('.jadwal-edit');
     selects.forEach(sel => sel.classList.remove('hidden'));
     
-    // Ubah ikon pensil jadi simpan (Opsional)
-    btn.innerHTML = '💾';
-    btn.setAttribute('onclick', `location.reload()`); // Refresh untuk menyimpan/keluar mode edit
+    // 3. Ubah tombol pensil menjadi tombol simpan yang aman
+    // Gunakan type="button" agar tidak me-refresh halaman
+    btn.innerHTML = '✅'; 
+    btn.setAttribute('onclick', 'location.reload()'); // Atau hilangkan ini jika ingin manual
+    btn.setAttribute('type', 'button'); 
 }
 
 function toggleEdit(idKey) {
