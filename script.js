@@ -883,12 +883,10 @@ async function loadJadwal() {
                 return `
                 <td class="p-1 border text-center relative" id="cell-${staff.name}-${tglKey}">
                     <span class="jadwal-text font-bold" id="text-${staff.name}-${tglKey}">${val}</span>
-                    <select class="jadwal-edit hidden w-full bg-yellow-50 p-1 border" 
+                    <select class="jadwal-edit hidden w-full p-1 border" 
                             id="select-${staff.name}-${tglKey}"
                             onchange="updateJadwal('${staff.name}', '${tglKey}', this.value); updateCellColor(this, '${staff.name}-${tglKey}')">
-                        ${['18:30', 'RD', 'SL', 'SLWOP', 'VL', 'VLWOP'].map(opt => 
-                            `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
-                    </select>
+                        </select>
                 </td>`;
             }).join('');
 
@@ -940,12 +938,18 @@ function updateJadwal(nama, tglKey, value) {
 
 function updateCellColor(selectElement, idKey) {
     const val = selectElement.value;
-    const cell = document.getElementById(`text-${idKey.replace('select-', '')}`);
+    const textSpan = document.getElementById(`text-${idKey}`);
     
-    // Hapus semua class warna dulu
-    cell.className = "jadwal-text font-bold";
+    // Reset kelas warna
+    textSpan.className = "jadwal-text font-bold p-1 rounded block";
     
-    // Tambahkan class berdasarkan kondisi
-    if (val === 'RD') cell.classList.add('bg-orange-500', 'text-white');
-    else if (val === 'SLWOP' || val === 'VLWOP') cell.classList.add('bg-red-600', 'text-white');
+    // Logika Warna
+    if (val === 'RD') {
+        textSpan.classList.add('bg-orange-500', 'text-white');
+    } else if (val === 'SLWOP' || val === 'VLWOP') {
+        textSpan.classList.add('bg-red-600', 'text-white');
+    } else {
+        // Warna default (untuk 18:30, SL, VL)
+        textSpan.classList.add('text-slate-900');
+    }
 }
