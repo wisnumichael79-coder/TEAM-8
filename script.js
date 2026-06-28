@@ -873,11 +873,11 @@ async function loadJadwal() {
         const wrapper = document.createElement('div');
         wrapper.className = "mb-8 w-full";
         wrapper.innerHTML = `
-            <div class="bg-blue-900 text-white p-2 font-bold w-full">
-                ${webName}
+            <div class="web-header">${webName}</div>
+            <div class="table-responsive-wrapper">
+                <table class="text-sm border border-slate-300">
+                    </table>
             </div>
-            <div class="overflow-x-auto w-full">
-                </div>
         `;
         container.appendChild(wrapper);
         

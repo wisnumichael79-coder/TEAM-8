@@ -15,23 +15,27 @@
         .bg-orange-500 { background-color: #f97316 !important; }
         .bg-red-600 { background-color: #dc2626 !important; }
         .text-white { color: white !important; }
-        /* Paksa judul dan tabel agar lebarnya selalu sama */
-        .bg-blue-900 {
-            width: 100% !important;
+        /* 1. Judul Biru: Paksa selebar tabel */
+        .web-header {
+            background-color: #1e3a8a; /* Biru gelap */
+            color: white;
+            padding: 8px;
+            font-weight: bold;
+            width: 100%;
             display: block;
-            box-sizing: border-box;
         }
 
-        /* Pastikan tabel mengambil ruang penuh dari container */
+        /* 2. Container Tabel: Wajib overflow agar bisa di-scroll */
+        .table-responsive-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        /* 3. Tabel: Hapus table-fixed! Gunakan min-width */
         table {
-            width: 100% !important;
-            max-width: 100% !important;
-            table-layout: fixed; /* Penting agar kolom tetap proporsional */
-        }
-
-        /* Hilangkan margin/padding yang mungkin mengganjal */
-        #jadwal-container {
-            padding: 0 !important; /* Hapus padding container jika perlu */
+            width: 100%;
+            min-width: 1200px; /* Lebar minimum tabel agar tidak menciut saat di-zoom */
+            border-collapse: collapse;
         }
     </style>
 </head>
