@@ -924,7 +924,8 @@ async function loadJadwal() {
                     
                     ${isAdmin ? `
                         <select class="jadwal-edit hidden w-full h-full text-center" 
-                                onchange="saveAndUpdate('${staff.name}', '${tglKey}', this)">
+                            id="select-${staff.name}-${tglKey}" 
+                            onchange="saveAndUpdate('${staff.name}', '${tglKey}', this)">
                             ${['18:30', '06:30', 'HALF', 'RD', 'SL', 'SLWOP', 'VL', 'VLWOP'].map(opt => 
                                 `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
                         </select>
@@ -996,7 +997,8 @@ function saveAndUpdate(nama, tglKey, selectElement) {
     const bulan = document.getElementById('filter-jadwal-bulan').value;
     const val = selectElement.value;
     
-    // Simpan ke Firebase
+    console.log("Menyimpan ke: " + `jadwal/${bulan}/${nama}/${tglKey}` + " Nilai: " + val); // <--- TAMBAHKAN INI
+    
     database.ref(`jadwal/${bulan}/${nama}/${tglKey}`).set(val);
 
     // Update tampilan teks di div
@@ -1015,11 +1017,25 @@ function saveAndUpdate(nama, tglKey, selectElement) {
 function disableEditMode(staffName, btn) {
     const row = btn.closest('tr');
     
-    // Sembunyikan dropdown, tampilkan kembali teks
-    row.querySelectorAll('.jadwal-edit').forEach(sel => sel.classList.add('hidden'));
+    // 1. Cari semua dropdown di baris ini
+    const selects = row.querySelectorAll('.jadwal-edit');
+    
+    // 2. Simpan setiap perubahan ke Firebase sebelum menutup mode edit
+    selects.forEach(select => {
+        if (!select.classList.contains('hidden')) {
+            // Panggil fungsi simpan untuk setiap dropdown yang terbuka
+            // Kita ambil tglKey dari ID dropdown (contoh ID: select-NAMA-tgl_1)
+            const idParts = select.id.split('-');
+            const tglKey = idParts[idParts.length - 1]; 
+            saveAndUpdate(staffName, tglKey, select);
+        }
+    });
+
+    // 3. Sembunyikan dropdown, tampilkan kembali teks
+    selects.forEach(sel => sel.classList.add('hidden'));
     row.querySelectorAll('.jadwal-text').forEach(div => div.classList.remove('hidden'));
     
-    // Kembalikan ikon ke pensil
+    // 4. Kembalikan ikon ke pensil
     btn.innerHTML = '✏️';
     btn.setAttribute('onclick', `enableEditMode('${staffName}', this)`);
 }
