@@ -918,14 +918,14 @@ async function loadJadwal() {
 
                 return `
                 <td class="p-0 border text-center relative h-10 w-12">
-                    <div class="w-full h-full flex items-center justify-center font-bold ${colorClass}">
+                    <div class="jadwal-text w-full h-full flex items-center justify-center font-bold ${colorClass}" id="text-${staff.name}-${tglKey}">
                         ${val}
                     </div>
                     ${isAdmin ? `
                         <select class="jadwal-edit hidden w-full h-full text-center" 
+                                id="select-${staff.name}-${tglKey}"
                                 onchange="saveAndUpdate('${staff.name}', '${tglKey}', this)">
-                            ${options.map(opt => 
-                                `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                            ${options.map(opt => `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
                         </select>
                     ` : ''}
                 </td>`;
@@ -946,10 +946,22 @@ async function loadJadwal() {
 
 // Fungsi pendukung edit
 function enableEditMode(staffName, btn) {
-    const isEditing = btn.innerText === "💾";
-    document.querySelectorAll(`[id^="select-${staffName}-"]`).forEach(el => el.classList.toggle('hidden'));
-    document.querySelectorAll(`[id^="text-${staffName}-"]`).forEach(el => el.classList.toggle('hidden'));
-    btn.innerText = isEditing ? "✏️" : "💾";
+    // 1. Cari baris (tr) tempat tombol pensil berada
+    const row = btn.closest('tr');
+    
+    // 2. Cari semua div yang berisi teks jadwal (kita tambahkan class .jadwal-text tadi)
+    const textDivs = row.querySelectorAll('.jadwal-text');
+    
+    // 3. Cari semua select yang ada di baris tersebut
+    const selects = row.querySelectorAll('.jadwal-edit');
+    
+    // 4. Sembunyikan semua div teks, tampilkan semua select
+    textDivs.forEach(div => div.classList.add('hidden'));
+    selects.forEach(sel => sel.classList.remove('hidden'));
+    
+    // 5. Ubah ikon pensil menjadi ikon simpan (opsional)
+    btn.innerHTML = '💾';
+    btn.setAttribute('onclick', `saveAll('${staffName}', this)`);
 }
 
 function toggleEdit(idKey) {
