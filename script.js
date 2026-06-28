@@ -918,7 +918,8 @@ async function loadJadwal() {
 
                 return `
                 <td class="p-0 border text-center relative h-10 w-12">
-                    <div class="jadwal-text w-full h-full flex items-center justify-center font-bold ${colorClass}">
+                    <div class="jadwal-text w-full h-full flex items-center justify-center font-bold ${colorClass}"
+                    id="text-${staff.name}-tgl_${i+1}">
                         ${val}
                     </div>
                     
@@ -999,21 +1000,27 @@ function saveAndUpdate(nama, tglKey, selectElement) {
     const bulan = document.getElementById('filter-jadwal-bulan').value;
     const val = selectElement.value;
     
-    console.log("Menyimpan ke: " + `jadwal/${bulan}/${nama}/${tglKey}` + " Nilai: " + val); // <--- TAMBAHKAN INI
-    
+    // Simpan ke Firebase
     database.ref(`jadwal/${bulan}/${nama}/${tglKey}`).set(val);
 
-    // Update tampilan teks di div
+    // Cari elemen berdasarkan ID
     const textDiv = document.getElementById(`text-${nama}-${tglKey}`);
-    textDiv.innerText = val;
     
-    // Reset dan atur warna latar belakang penuh
-    textDiv.className = "jadwal-text w-full h-full flex items-center justify-center font-bold";
-    
-    if (val === 'RD') textDiv.classList.add('bg-orange-500', 'text-white');
-    else if (val === 'SLWOP' || val === 'VLWOP') textDiv.classList.add('bg-red-600', 'text-white');
-    else if (val === 'HALF') textDiv.classList.add('bg-yellow-500', 'text-black');
-    else if (val === '06:30') textDiv.classList.add('bg-blue-500', 'text-white');
+    // Tambahkan pengecekan if (textDiv) agar tidak error jika elemen tidak ditemukan
+    if (textDiv) {
+        textDiv.innerText = val;
+        
+        // Reset class
+        textDiv.className = "jadwal-text w-full h-full flex items-center justify-center font-bold";
+        
+        // Atur warna
+        if (val === 'RD') textDiv.classList.add('bg-orange-500', 'text-white');
+        else if (val === 'SLWOP' || val === 'VLWOP') textDiv.classList.add('bg-red-600', 'text-white');
+        else if (val === 'HALF') textDiv.classList.add('bg-yellow-500', 'text-black');
+        else if (val === '06:30') textDiv.classList.add('bg-blue-500', 'text-white');
+    } else {
+        console.warn(`Elemen text-${nama}-${tglKey} tidak ditemukan!`);
+    }
 }
 
 function disableEditMode(staffName, btn) {
