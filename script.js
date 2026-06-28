@@ -881,16 +881,14 @@ async function loadJadwal() {
                 const tglKey = `tgl_${i+1}`;
                 const val = jadwalData[staff.name]?.[tglKey] || "18:30";
                 return `
-                <td class="p-1 border text-center">
-                    <span class="jadwal-text" id="text-${staff.name}-${tglKey}">${val}</span>
-                    ${isAdmin ? `
-                        <select class="jadwal-edit hidden w-full bg-yellow-50 p-1 border" 
-                                id="select-${staff.name}-${tglKey}"
-                                onchange="updateJadwal('${staff.name}', '${tglKey}', this.value); toggleEdit('${staff.name}-${tglKey}')">
-                            ${['18:30', 'RD', 'SL', 'SLWOP', 'VL', 'VLWOP'].map(opt => 
-                                `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
-                        </select>
-                    ` : ''}
+                <td class="p-1 border text-center relative" id="cell-${staff.name}-${tglKey}">
+                    <span class="jadwal-text font-bold" id="text-${staff.name}-${tglKey}">${val}</span>
+                    <select class="jadwal-edit hidden w-full bg-yellow-50 p-1 border" 
+                            id="select-${staff.name}-${tglKey}"
+                            onchange="updateJadwal('${staff.name}', '${tglKey}', this.value); updateCellColor(this, '${staff.name}-${tglKey}')">
+                        ${['18:30', 'RD', 'SL', 'SLWOP', 'VL', 'VLWOP'].map(opt => 
+                            `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                    </select>
                 </td>`;
             }).join('');
 
@@ -898,7 +896,7 @@ async function loadJadwal() {
             if (isAdmin) {
                 rowHtml += `
                 <td class="p-2 border text-center">
-                    <button onclick="enableEditMode('${staff.name}')" class="text-blue-600 hover:text-blue-800">
+                    <button onclick="enableEditMode('${staff.name}', this)" class="text-xl">
                         ✏️
                     </button>
                 </td>`;
@@ -911,9 +909,19 @@ async function loadJadwal() {
 }
 
 // Fungsi pendukung edit
-function enableEditMode(staffName) {
-    document.querySelectorAll(`[id^="select-${staffName}-"]`).forEach(el => el.classList.remove('hidden'));
-    document.querySelectorAll(`[id^="text-${staffName}-"]`).forEach(el => el.classList.add('hidden'));
+function enableEditMode(staffName, btn) {
+    const isEditing = btn.innerText === "💾"; // Jika ikon saat ini adalah disket
+    
+    // Toggle elemen: Tampilkan/Sembunyikan dropdown & teks
+    document.querySelectorAll(`[id^="select-${staffName}-"]`).forEach(el => {
+        el.classList.toggle('hidden');
+    });
+    document.querySelectorAll(`[id^="text-${staffName}-"]`).forEach(el => {
+        el.classList.toggle('hidden');
+    });
+
+    // Ubah ikon pensil jadi disket (save) dan sebaliknya
+    btn.innerText = isEditing ? "✏️" : "💾";
 }
 
 function toggleEdit(idKey) {
@@ -928,4 +936,16 @@ function toggleEdit(idKey) {
 function updateJadwal(nama, tglKey, value) {
     const bulan = document.getElementById('filter-jadwal-bulan').value;
     database.ref(`jadwal/${bulan}/${nama}/${tglKey}`).set(value);
+}
+
+function updateCellColor(selectElement, idKey) {
+    const val = selectElement.value;
+    const cell = document.getElementById(`text-${idKey.replace('select-', '')}`);
+    
+    // Hapus semua class warna dulu
+    cell.className = "jadwal-text font-bold";
+    
+    // Tambahkan class berdasarkan kondisi
+    if (val === 'RD') cell.classList.add('bg-orange-500', 'text-white');
+    else if (val === 'SLWOP' || val === 'VLWOP') cell.classList.add('bg-red-600', 'text-white');
 }
