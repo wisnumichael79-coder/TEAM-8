@@ -1017,25 +1017,30 @@ function saveAndUpdate(nama, tglKey, selectElement) {
 }
 
 function disableEditMode(staffName, btn) {
-    const row = btn.closest('tr');
-    
-    // Cari semua dropdown yang tidak disembunyikan
-    const selects = row.querySelectorAll('.jadwal-edit:not(.hidden)');
-    
-    // Simpan semua perubahan
-    selects.forEach(select => {
-        // Kita ambil ID-nya, contoh: "select-NAMA-tgl_1"
-        const idParts = select.id.split('-');
-        const tglKey = idParts[2]; // Ini akan mengambil "tgl_1"
+    console.log("Memulai proses simpan...");
+    try {
+        const row = btn.closest('tr');
         
-        saveAndUpdate(staffName, tglKey, select);
-    });
+        // 1. Simpan semua data
+        const selects = row.querySelectorAll('.jadwal-edit');
+        selects.forEach(select => {
+            if (!select.classList.contains('hidden')) {
+                const idParts = select.id.split('-');
+                const tglKey = idParts[2]; // Pastikan index ini benar sesuai ID Anda
+                saveAndUpdate(staffName, tglKey, select);
+            }
+        });
 
-    // Sembunyikan semua dropdown, munculkan semua teks
-    row.querySelectorAll('.jadwal-edit').forEach(sel => sel.classList.add('hidden'));
-    row.querySelectorAll('.jadwal-text').forEach(div => div.classList.remove('hidden'));
-    
-    // Ubah ikon ke pensil
-    btn.innerHTML = '✏️';
-    btn.setAttribute('onclick', `enableEditMode('${staffName}', this)`);
+        // 2. Sembunyikan dropdown & Tampilkan teks
+        row.querySelectorAll('.jadwal-edit').forEach(sel => sel.classList.add('hidden'));
+        row.querySelectorAll('.jadwal-text').forEach(div => div.classList.remove('hidden'));
+        
+        // 3. Ubah Ikon
+        btn.innerHTML = '✏️';
+        btn.setAttribute('onclick', `enableEditMode('${staffName}', this)`);
+        
+        console.log("Proses selesai dan ikon berhasil diubah.");
+    } catch (error) {
+        console.error("Terjadi error saat simpan:", error);
+    }
 }
