@@ -837,14 +837,12 @@ async function loadJadwal() {
     const daysInMonth = new Date(year, month, 0).getDate();
     const isAdmin = sessionStorage.getItem("team8_user_role") === "admin";
 
-    // Ambil data staff dan jadwal
     const staffSnapshot = await database.ref('staff').once('value');
     const jadwalSnapshot = await database.ref(`jadwal/${bulan}`).once('value');
     const jadwalData = jadwalSnapshot.val() || {};
 
-    container.innerHTML = ""; // Bersihkan container
+    container.innerHTML = ""; 
 
-    // Kelompokkan staff berdasarkan Website
     const staffByWeb = {};
     staffSnapshot.forEach(child => {
         const staff = child.val();
@@ -853,7 +851,6 @@ async function loadJadwal() {
         staffByWeb[web].push(staff);
     });
 
-    // Render tabel per Website
     for (const [webName, staffs] of Object.entries(staffByWeb)) {
         const wrapper = document.createElement('div');
         wrapper.className = "mb-8";
@@ -863,6 +860,7 @@ async function loadJadwal() {
             <thead class="bg-slate-100">
                 <tr><th class="p-2 border">NAMA</th>
                 ${Array.from({length: daysInMonth}, (_, i) => `<th class="p-1 border">${i+1}</th>`).join('')}
+                ${isAdmin ? '<th class="p-1 border">AKSI</th>' : ''}
                 </tr>
             </thead>
             <tbody></tbody>
@@ -874,27 +872,60 @@ async function loadJadwal() {
         const tbody = wrapper.querySelector('tbody');
         staffs.forEach(staff => {
             const row = document.createElement('tr');
-            row.innerHTML = `<td class="p-2 border font-bold">${staff.name}</td>` + 
-                Array.from({length: daysInMonth}, (_, i) => {
-                    const tglKey = `tgl_${i+1}`;
-                    const val = jadwalData[staff.name]?.[tglKey] || "18:30";
-                    return `
-                    <td class="p-0 border">
-                        <select ${!isAdmin ? 'disabled' : ''} class="w-full bg-transparent p-1 border-0" 
-                                onchange="updateJadwal('${staff.name}', '${tglKey}', this.value)">
+            
+            // Kolom Nama
+            let rowHtml = `<td class="p-2 border font-bold">${staff.name}</td>`;
+            
+            // Kolom Tanggal
+            rowHtml += Array.from({length: daysInMonth}, (_, i) => {
+                const tglKey = `tgl_${i+1}`;
+                const val = jadwalData[staff.name]?.[tglKey] || "18:30";
+                return `
+                <td class="p-1 border text-center">
+                    <span class="jadwal-text" id="text-${staff.name}-${tglKey}">${val}</span>
+                    ${isAdmin ? `
+                        <select class="jadwal-edit hidden w-full bg-yellow-50 p-1 border" 
+                                id="select-${staff.name}-${tglKey}"
+                                onchange="updateJadwal('${staff.name}', '${tglKey}', this.value); toggleEdit('${staff.name}-${tglKey}')">
                             ${['18:30', 'RD', 'SL', 'SLWOP', 'VL', 'VLWOP'].map(opt => 
                                 `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
                         </select>
-                    </td>`;
-                }).join('');
+                    ` : ''}
+                </td>`;
+            }).join('');
+
+            // Kolom Pensil (Admin)
+            if (isAdmin) {
+                rowHtml += `
+                <td class="p-2 border text-center">
+                    <button onclick="enableEditMode('${staff.name}')" class="text-blue-600 hover:text-blue-800">
+                        ✏️
+                    </button>
+                </td>`;
+            }
+            
+            row.innerHTML = rowHtml;
             tbody.appendChild(row);
         });
     }
 }
 
-// Fungsi simpan (Update) ke Firebase
+// Fungsi pendukung edit
+function enableEditMode(staffName) {
+    document.querySelectorAll(`[id^="select-${staffName}-"]`).forEach(el => el.classList.remove('hidden'));
+    document.querySelectorAll(`[id^="text-${staffName}-"]`).forEach(el => el.classList.add('hidden'));
+}
+
+function toggleEdit(idKey) {
+    const select = document.getElementById(`select-${idKey}`);
+    const text = document.getElementById(`text-${idKey}`);
+    text.innerText = select.value;
+    select.classList.add('hidden');
+    text.classList.remove('hidden');
+}
+
+// Fungsi simpan
 function updateJadwal(nama, tglKey, value) {
     const bulan = document.getElementById('filter-jadwal-bulan').value;
-    database.ref(`jadwal/${bulan}/${nama}/${tglKey}`).set(value)
-        .then(() => console.log("Jadwal tersimpan."));
+    database.ref(`jadwal/${bulan}/${nama}/${tglKey}`).set(value);
 }
