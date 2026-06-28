@@ -1019,11 +1019,11 @@ function saveAndUpdate(nama, tglKey, selectElement) {
         if (val === 'RD') {
             textDiv.classList.add('bg-orange-500', 'text-white');
         } else if (val === 'SL' || val === 'SLWOP' || val === 'VLWOP') {
-            textDiv.classList.add('bg-red-600', 'text-white'); // Merah untuk SL, SLWOP, VLWOP
+            textDiv.classList.add('bg-red-600', 'text-white');
         } else if (val === 'VL') {
-            textDiv.classList.add('bg-purple-600', 'text-white'); // Ungu untuk VL
+            textDiv.classList.add('bg-purple-600', 'text-white');
         } else if (val === '18:30') {
-            textDiv.classList.add('bg-green-600', 'text-white'); // Hijau untuk 18:30
+            textDiv.classList.add('bg-green-600', 'text-white');
         } else if (val === 'HALF') {
             textDiv.classList.add('bg-yellow-500', 'text-black');
         } else if (val === '06:30') {
