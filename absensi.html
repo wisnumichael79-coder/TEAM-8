@@ -1,10 +1,14 @@
 <div class="p-6">
+    <h2 class="text-2xl font-bold mb-6">Jadwal & Absensi</h2>
+    
     <div class="mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
         <label class="font-semibold text-slate-700">Pilih Periode:</label>
         <input type="month" id="filter-jadwal-bulan" class="p-2 border border-slate-300 rounded-lg">
-        <button onclick="loadJadwal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">Muat Jadwal</button>
+        <button onclick="loadJadwal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700">
+            Muat Jadwal
+        </button>
     </div>
 
-    <div id="jadwal-container" class="overflow-x-auto bg-white rounded-xl shadow-sm border border-slate-200">
+    <div id="jadwal-container" class="overflow-x-auto bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         </div>
 </div>
