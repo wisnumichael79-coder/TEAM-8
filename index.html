@@ -15,10 +15,24 @@
         .bg-orange-500 { background-color: #f97316 !important; }
         .bg-red-600 { background-color: #dc2626 !important; }
         .text-white { color: white !important; }
+        /* Paksa container agar tidak menahan lebar tabel */
+        #jadwal-container {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        /* Paksa tabel agar mengisi 100% dari container */
         #jadwal-container table {
+            width: 100% !important;
+            min-width: 1000px !important; /* Angka ini memastikan tabel tidak menciut */
             table-layout: fixed;
-            width: 100%;
-            min-width: 1000px; /* Saya sarankan naikkan ke 1000px agar lebih lega */
+        }
+
+        /* Pastikan sel tabel tidak melampaui batas */
+        #jadwal-container td, #jadwal-container th {
+            box-sizing: border-box;
+            overflow: hidden;
+            white-space: nowrap;
         }
     </style>
 </head>
