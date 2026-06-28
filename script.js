@@ -410,8 +410,11 @@ function renderStaffTable() {
             let tdAksiHtml = "";
             if (userRole !== "staff") {
                 tdAksiHtml = `
-                    <td class="p-4 text-center">
-                        <button onclick="deleteStaffOnline('${staffId}', '${staff.name}')" class="text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer">
+                    <td class="p-4 text-center space-x-2">
+                        <button onclick="editStaffOnline('${staffId}')" class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                            Edit
+                        </button>
+                        <button onclick="deleteStaffOnline('${staffId}', '${staff.name}')" class="text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg text-xs font-medium transition">
                             Hapus
                         </button>
                     </td>
@@ -1074,4 +1077,40 @@ function disableEditMode(staffName, btn) {
     } catch (error) {
         console.error("Terjadi error saat simpan:", error);
     }
+}
+
+function editStaffOnline(staffId) {
+    if (sessionStorage.getItem("team8_user_role") === "staff") return;
+
+    // Ambil data referensi staff yang akan diedit
+    database.ref('staff/' + staffId).once('value', (snapshot) => {
+        const staff = snapshot.val();
+        
+        // Prompt untuk edit data
+        const newName = prompt("Edit Nama:", staff.name);
+        if (newName === null) return; // Jika klik batal
+        
+        const newRole = prompt("Edit Jabatan:", staff.role);
+        const newShift = prompt("Edit Shift (Pagi/Malam):", staff.shift);
+        const newWeb = prompt("Edit Web:", staff.web);
+
+        // Validasi input
+        if (newName.trim() === "" || newRole.trim() === "") {
+            alert("Nama dan Jabatan tidak boleh kosong!");
+            return;
+        }
+
+        // Update ke Firebase
+        database.ref('staff/' + staffId).update({
+            name: newName,
+            role: newRole,
+            shift: newShift,
+            web: newWeb
+        }).then(() => {
+            alert("Data berhasil diperbarui!");
+            renderStaffTable(); // Refresh tabel otomatis
+        }).catch(err => {
+            alert("Gagal update: " + err.message);
+        });
+    });
 }
