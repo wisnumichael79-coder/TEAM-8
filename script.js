@@ -922,7 +922,7 @@ async function loadJadwal() {
             // Kolom Tanggal
             rowHtml += Array.from({length: daysInMonth}, (_, i) => {
                 const tglKey = `tgl_${i+1}`;
-                const val = jadwalData[staff.name]?.[tglKey] || "18:30";
+                const val = jadwalData[staff.name]?.[tglKey] || "06:30";
                 
                 // 1. Logika Warna (tambahkan juga untuk HALF & 06:30 jika mau)
                 let colorClass = "";
@@ -1025,7 +1025,7 @@ function saveAndUpdate(nama, tglKey, selectElement) {
         location.reload(); // Refresh untuk mengembalikan status
         return;
     }
-    
+
     const val = selectElement.value;
 
     const currentShift = "Pagi";
