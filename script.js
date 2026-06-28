@@ -884,7 +884,10 @@ async function loadJadwal() {
         let table = `<table class="min-w-max w-full text-sm border-collapse border border-slate-300">
             <thead class="bg-slate-100">
                 <tr>
-                    <th class="w-40 p-2 border">NAMA</th> ${Array.from({length: daysInMonth}, (_, i) => `<th class="w-10 p-1 border">${i+1}</th>`).join('')}
+                    <th class="w-40 p-2 border">NAMA</th>
+                    <th class="w-24 p-2 border">STATUS</th>
+                    <th class="w-20 p-2 border">SHIFT</th>
+                    ${Array.from({length: daysInMonth}, (_, i) => `<th class="w-10 p-1 border">${i+1}</th>`).join('')}
                     ${isAdmin ? '<th class="w-16 p-1 border">AKSI</th>' : ''}
                 </tr>
             </thead>
@@ -900,15 +903,10 @@ async function loadJadwal() {
             
             // Header Nama
             let rowHtml = `
-                <td class="p-2 border">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-bold whitespace-nowrap">${staff.name}</span>
-                        <span class="text-xs text-gray-500 border-l pl-2">
-                            ${staff.role || '-'} / 
-                            <span class="text-blue-600 font-semibold">${staff.shift || '-'}</span>
-                        </span>
-                    </div>
-                </td>`;
+                <td class="p-2 border font-bold">${staff.name}</td>
+                <td class="p-2 border text-center">${staff.role || '-'}</td>
+                <td class="p-2 border text-center font-semibold text-blue-600">${staff.shift || '-'}</td>
+            `;
             
             // Kolom Tanggal
             rowHtml += Array.from({length: daysInMonth}, (_, i) => {
