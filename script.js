@@ -9,6 +9,12 @@ const STAFF_PASSWORD = "Aa131313";
 
 const SECURITY_PIN = "1234";
 
+// script.js
+document.addEventListener("DOMContentLoaded", function() {
+    console.log("%cSTOP!", "color: red; font-size: 50px; font-weight: bold;");
+    console.log("⚠️JANGAN BANDALLL.");
+});
+
 // JEMBATAN OTOMATIS KE GOOGLE SPREADSHEET ANDA
 const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbylIb8B24pLxOKkuihiigUtnA6Yj_nQFTl58SkoyiO2sfTOrNqhGM--80CjIEm87XiF/exec";
 
