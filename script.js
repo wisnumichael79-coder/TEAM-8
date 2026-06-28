@@ -823,3 +823,78 @@ function downloadDashboardExcel() {
     link.click();
     document.body.removeChild(link);
 }
+
+// ==========================================
+// KONTROLLER JADWAL & ROSTER (OTOMATIS)
+// ==========================================
+
+async function loadJadwal() {
+    const bulan = document.getElementById('filter-jadwal-bulan').value;
+    if (!bulan) return alert("Pilih bulan terlebih dahulu!");
+
+    const container = document.getElementById('jadwal-container');
+    const [year, month] = bulan.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const isAdmin = sessionStorage.getItem("team8_user_role") === "admin";
+
+    // Ambil data staff dan jadwal
+    const staffSnapshot = await database.ref('staff').once('value');
+    const jadwalSnapshot = await database.ref(`jadwal/${bulan}`).once('value');
+    const jadwalData = jadwalSnapshot.val() || {};
+
+    container.innerHTML = ""; // Bersihkan container
+
+    // Kelompokkan staff berdasarkan Website
+    const staffByWeb = {};
+    staffSnapshot.forEach(child => {
+        const staff = child.val();
+        const web = staff.web || "Tanpa Website";
+        if (!staffByWeb[web]) staffByWeb[web] = [];
+        staffByWeb[web].push(staff);
+    });
+
+    // Render tabel per Website
+    for (const [webName, staffs] of Object.entries(staffByWeb)) {
+        const wrapper = document.createElement('div');
+        wrapper.className = "mb-8";
+        wrapper.innerHTML = `<h3 class="bg-blue-900 text-white p-2 font-bold">${webName}</h3>`;
+        
+        let table = `<table class="w-full text-sm border-collapse border border-slate-300">
+            <thead class="bg-slate-100">
+                <tr><th class="p-2 border">NAMA</th>
+                ${Array.from({length: daysInMonth}, (_, i) => `<th class="p-1 border">${i+1}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>`;
+        
+        wrapper.innerHTML += table;
+        container.appendChild(wrapper);
+
+        const tbody = wrapper.querySelector('tbody');
+        staffs.forEach(staff => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td class="p-2 border font-bold">${staff.name}</td>` + 
+                Array.from({length: daysInMonth}, (_, i) => {
+                    const tglKey = `tgl_${i+1}`;
+                    const val = jadwalData[staff.name]?.[tglKey] || "18:30";
+                    return `
+                    <td class="p-0 border">
+                        <select ${!isAdmin ? 'disabled' : ''} class="w-full bg-transparent p-1 border-0" 
+                                onchange="updateJadwal('${staff.name}', '${tglKey}', this.value)">
+                            ${['18:30', 'RD', 'SL', 'SLWOP', 'VL', 'VLWOP'].map(opt => 
+                                `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                        </select>
+                    </td>`;
+                }).join('');
+            tbody.appendChild(row);
+        });
+    }
+}
+
+// Fungsi simpan (Update) ke Firebase
+function updateJadwal(nama, tglKey, value) {
+    const bulan = document.getElementById('filter-jadwal-bulan').value;
+    database.ref(`jadwal/${bulan}/${nama}/${tglKey}`).set(value)
+        .then(() => console.log("Jadwal tersimpan."));
+}
