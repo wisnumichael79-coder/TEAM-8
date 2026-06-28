@@ -309,15 +309,22 @@ function loadPage(pageName) {
                 }
                 renderStaffTable();
             } else if (pageName === 'absensi') {
-                flatpickr("#filter-jadwal-bulan", {
-                    plugins: [
-                        new monthSelectPlugin({
-                            shorthand: true,
-                            dateFormat: "Y-m",
-                            altFormat: "F Y"
-                        })
-                    ]
-                });
+                // Memberi sedikit jeda agar elemen DOM siap dan library terdeteksi
+                setTimeout(() => {
+                    if (typeof flatpickr !== 'undefined') {
+                        flatpickr("#filter-jadwal-bulan", {
+                            plugins: [
+                                new monthSelectPlugin({
+                                    shorthand: true,
+                                    dateFormat: "Y-m",
+                                    altFormat: "F Y"
+                                })
+                            ]
+                        });
+                    } else {
+                        console.error("Flatpickr belum terload!");
+                    }
+                }, 100); // Jeda 100 milidetik
             }
 
             if (window.lucide) lucide.createIcons();
@@ -924,15 +931,8 @@ async function loadJadwal() {
 // Fungsi pendukung edit
 function enableEditMode(staffName, btn) {
     const isEditing = btn.innerText === "💾";
-    
-    // Toggle dropdown dan teks
-    document.querySelectorAll(`[id^="select-${staffName}-"]`).forEach(el => {
-        el.classList.toggle('hidden');
-    });
-    document.querySelectorAll(`[id^="text-${staffName}-"]`).forEach(el => {
-        el.classList.toggle('hidden');
-    });
-
+    document.querySelectorAll(`[id^="select-${staffName}-"]`).forEach(el => el.classList.toggle('hidden'));
+    document.querySelectorAll(`[id^="text-${staffName}-"]`).forEach(el => el.classList.toggle('hidden'));
     btn.innerText = isEditing ? "✏️" : "💾";
 }
 
@@ -969,16 +969,14 @@ function updateCellColor(selectElement, idKey) {
 }
 
 function saveAndUpdate(nama, tglKey, selectElement) {
-    // 1. Simpan ke Firebase
     const bulan = document.getElementById('filter-jadwal-bulan').value;
     database.ref(`jadwal/${bulan}/${nama}/${tglKey}`).set(selectElement.value);
 
-    // 2. Update tampilan warna langsung
     const val = selectElement.value;
     const textSpan = document.getElementById(`text-${nama}-${tglKey}`);
     textSpan.innerText = val;
     
-    // Reset warna
+    // Reset dan atur warna
     textSpan.className = "jadwal-text font-bold p-1 block";
     if (val === 'RD') textSpan.classList.add('bg-orange-500', 'text-white');
     else if (val === 'SLWOP' || val === 'VLWOP') textSpan.classList.add('bg-red-600', 'text-white');
