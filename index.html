@@ -15,24 +15,23 @@
         .bg-orange-500 { background-color: #f97316 !important; }
         .bg-red-600 { background-color: #dc2626 !important; }
         .text-white { color: white !important; }
-        /* Paksa container agar tidak menahan lebar tabel */
-        #jadwal-container {
+        /* Paksa judul dan tabel agar lebarnya selalu sama */
+        .bg-blue-900 {
+            width: 100% !important;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        /* Pastikan tabel mengambil ruang penuh dari container */
+        table {
             width: 100% !important;
             max-width: 100% !important;
+            table-layout: fixed; /* Penting agar kolom tetap proporsional */
         }
 
-        /* Paksa tabel agar mengisi 100% dari container */
-        #jadwal-container table {
-            width: 100% !important;
-            min-width: 1000px !important; /* Angka ini memastikan tabel tidak menciut */
-            table-layout: fixed;
-        }
-
-        /* Pastikan sel tabel tidak melampaui batas */
-        #jadwal-container td, #jadwal-container th {
-            box-sizing: border-box;
-            overflow: hidden;
-            white-space: nowrap;
+        /* Hilangkan margin/padding yang mungkin mengganjal */
+        #jadwal-container {
+            padding: 0 !important; /* Hapus padding container jika perlu */
         }
     </style>
 </head>

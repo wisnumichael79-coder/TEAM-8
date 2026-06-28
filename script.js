@@ -871,8 +871,15 @@ async function loadJadwal() {
 
     for (const [webName, staffs] of Object.entries(staffByWeb)) {
         const wrapper = document.createElement('div');
-        wrapper.className = "mb-8";
-        wrapper.innerHTML = `<h3 class="bg-blue-900 text-white p-2 font-bold">${webName}</h3>`;
+        wrapper.className = "mb-8 w-full";
+        wrapper.innerHTML = `
+            <div class="bg-blue-900 text-white p-2 font-bold w-full">
+                ${webName}
+            </div>
+            <div class="overflow-x-auto w-full">
+                </div>
+        `;
+        container.appendChild(wrapper);
         
         let table = `<table class="min-w-max w-full text-sm border-collapse border border-slate-300">
             <thead class="bg-slate-100">
