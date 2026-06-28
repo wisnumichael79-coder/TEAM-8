@@ -272,6 +272,7 @@ function loadPage(pageName) {
                 if(pageName === 'dashboard') pageTitle.innerText = 'Dashboard';
                 else if(pageName === 'inout') pageTitle.innerText = 'IN/OUT';
                 else if(pageName === 'manajemen') pageTitle.innerText = 'Manajemen Staff';
+                else if(pageName === 'absensi') pageTitle.innerText = 'Jadwal & Absensi';
             }
 
             updateSidebarStyle(pageName);
@@ -307,6 +308,16 @@ function loadPage(pageName) {
                     }
                 }
                 renderStaffTable();
+            } else if (pageName === 'absensi') {
+                flatpickr("#filter-jadwal-bulan", {
+                    plugins: [
+                        new monthSelectPlugin({
+                            shorthand: true,
+                            dateFormat: "Y-m",
+                            altFormat: "F Y"
+                        })
+                    ]
+                });
             }
 
             if (window.lucide) lucide.createIcons();
