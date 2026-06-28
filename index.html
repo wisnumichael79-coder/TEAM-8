@@ -15,27 +15,19 @@
         .bg-orange-500 { background-color: #f97316 !important; }
         .bg-red-600 { background-color: #dc2626 !important; }
         .text-white { color: white !important; }
-        /* 1. Judul Biru: Paksa selebar tabel */
         .web-header {
-            background-color: #1e3a8a; /* Biru gelap */
+            background-color: #1e3a8a;
             color: white;
             padding: 8px;
             font-weight: bold;
-            width: 100%;
-            display: block;
+            width: 100%; /* Atau width: fit-content; jika ingin header mengikuti lebar tabel */
         }
-
-        /* 2. Container Tabel: Wajib overflow agar bisa di-scroll */
         .table-responsive-wrapper {
             width: 100%;
             overflow-x: auto;
         }
-
-        /* 3. Tabel: Hapus table-fixed! Gunakan min-width */
         table {
-            width: 100%;
-            min-width: 1200px; /* Lebar minimum tabel agar tidak menciut saat di-zoom */
-            border-collapse: collapse;
+            min-width: 1200px;
         }
     </style>
 </head>
