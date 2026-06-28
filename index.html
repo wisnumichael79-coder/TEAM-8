@@ -15,24 +15,33 @@
         .bg-orange-500 { background-color: #f97316 !important; }
         .bg-red-600 { background-color: #dc2626 !important; }
         .text-white { color: white !important; }
+        /* 1. Header Biru */
         .web-header {
             background-color: #1e3a8a;
             color: white;
             padding: 8px;
             font-weight: bold;
-            /* Ganti width: 100% menjadi: */
             display: inline-block; 
-            min-width: 100%; /* Memastikan dia minimal selebar layar */
+            min-width: 100%;
             box-sizing: border-box;
         }
 
+        /* 2. Container Tabel */
         .table-responsive-wrapper {
             width: 100%;
             overflow-x: auto;
-            /* Tambahkan ini agar tidak ada celah antara header dan tabel */
             display: block; 
         }
 
+        /* 3. Wrapper Utama (Ini bagian yang Anda tanyakan) */
+        .mb-8 {
+            margin-bottom: 2rem;
+            display: block;
+            width: fit-content; 
+            min-width: 100%;    
+        }
+
+        /* 4. Tabel */
         table {
             width: 100%;
             min-width: 1200px;
