@@ -899,7 +899,16 @@ async function loadJadwal() {
             const row = document.createElement('tr');
             
             // Header Nama
-            let rowHtml = `<td class="p-2 border font-bold">${staff.name}</td>`;
+            let rowHtml = `
+                <td class="p-2 border">
+                    <div class="flex items-center space-x-2">
+                        <span class="font-bold whitespace-nowrap">${staff.name}</span>
+                        <span class="text-xs text-gray-500 border-l pl-2">
+                            ${staff.role || '-'} / 
+                            <span class="text-blue-600 font-semibold">${staff.shift || '-'}</span>
+                        </span>
+                    </div>
+                </td>`;
             
             // Kolom Tanggal
             rowHtml += Array.from({length: daysInMonth}, (_, i) => {
