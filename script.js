@@ -883,18 +883,10 @@ async function loadJadwal() {
         wrapper.className = "mb-8 w-full";
         wrapper.innerHTML = `
             <div class="web-header">${webName}</div>
-            <table class="min-w-max w-full text-sm border-collapse border border-slate-300">
-                <thead class="bg-slate-100">
-                    <tr>
-                        <th class="p-2 border">NAMA</th>
-                        <th class="p-2 border">STATUS</th>
-                        <th class="p-2 border">SHIFT</th>
-                        ${Array.from({length: daysInMonth}, (_, i) => `<th class="p-1 border">${i+1}</th>`).join('')}
-                        ${isAdmin ? '<th class="p-2 border">AKSI</th>' : ''}
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+            <div class="table-responsive-wrapper">
+                <table class="text-sm border border-slate-300">
+                    </table>
+            </div>
         `;
         container.appendChild(wrapper);
         
@@ -922,31 +914,25 @@ async function loadJadwal() {
             let rowHtml = `
                 <td class="p-2 border font-bold">${staff.name}</td>
                 <td class="p-2 border text-center">${staff.role || '-'}</td>
-                <td class="p-2 border text-center">${staff.shift || '-'}</td>
+                <td class="p-2 border text-center font-semibold text-blue-600">${staff.shift || '-'}</td>
             `;
             
             // Kolom Tanggal
             rowHtml += Array.from({length: daysInMonth}, (_, i) => {
-                const tglIndex = i + 1;
-                const tglKey = `tgl_${tglIndex}`;
+                const tglKey = `tgl_${i+1}`;
                 const val = jadwalData[staff.name]?.[tglKey] || "18:30";
                 
-                // Cek apakah tanggal ini masa depan
-                const isLocked = isJadwalLocked(tglIndex, month, year);
-
-                // Tentukan warna dasar
+                // 1. Logika Warna (tambahkan juga untuk HALF & 06:30 jika mau)
                 let colorClass = "";
-                if (isLocked) {
-                    colorClass = "bg-gray-200 text-gray-400"; // Warna abu-abu untuk masa depan
-                } else {
-                    // Warna normal jika sudah lewat/hari ini
-                    if (val === 'RD') colorClass = "bg-orange-500 text-white";
-                    else if (val === 'SL' || val === 'SLWOP' || val === 'VLWOP') colorClass = "bg-red-600 text-white";
-                    else if (val === 'VL') colorClass = "bg-purple-600 text-white";
-                    else if (val === '18:30') colorClass = "bg-green-600 text-white";
-                    else if (val === 'HALF') colorClass = "bg-yellow-500 text-black";
-                    else if (val === '06:30') colorClass = "bg-blue-500 text-white";
-                }
+                if (val === 'RD') colorClass = "bg-orange-500 text-white";
+                else if (val === 'SL' || val === 'SLWOP' || val === 'VLWOP') colorClass = "bg-red-600 text-white";
+                else if (val === 'VL') colorClass = "bg-purple-600 text-white";
+                else if (val === '18:30') colorClass = "bg-green-600 text-white";
+                else if (val === 'HALF') colorClass = "bg-yellow-500 text-black";
+                else if (val === '06:30') colorClass = "bg-blue-500 text-white";
+
+                // 2. Definisikan opsi di sini
+                const options = ['18:30', '06:30', 'HALF', 'RD', 'SL', 'SLWOP', 'VL', 'VLWOP'];
 
                 return `
                 <td class="p-0 border text-center relative h-10 w-12">
@@ -954,6 +940,7 @@ async function loadJadwal() {
                     id="text-${staff.name}-tgl_${i+1}">
                         ${val}
                     </div>
+                    
                     ${isAdmin ? `
                         <select class="jadwal-edit hidden w-full h-full text-center" 
                             id="select-${staff.name}-tgl_${i+1}" 
@@ -1126,23 +1113,4 @@ function editStaffOnline(staffId) {
             alert("Gagal update: " + err.message);
         });
     });
-}
-
-function isJadwalLocked(tglIndex, jamJadwal) {
-    const sekarang = new Date();
-    const tglSekarang = sekarang.getDate();
-    const jamSekarang = sekarang.getHours();
-    
-    // TglIndex adalah tanggal di tabel (1-30)
-    // jamJadwal adalah "06:30" atau "18:30"
-    const jamTarget = parseInt(jamJadwal.split(':')[0]);
-
-    // Jika tanggal di tabel lebih besar dari tanggal hari ini, 
-    // artinya belum terjadi (locked)
-    if (tglIndex > tglSekarang) return true;
-    
-    // Jika tanggal sama, cek jamnya
-    if (tglIndex === tglSekarang && jamTarget > jamSekarang) return true;
-
-    return false; // Berarti sudah lewat atau sedang terjadi
 }
