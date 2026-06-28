@@ -905,14 +905,22 @@ async function loadJadwal() {
             rowHtml += Array.from({length: daysInMonth}, (_, i) => {
                 const tglKey = `tgl_${i+1}`;
                 const val = jadwalData[staff.name]?.[tglKey] || "18:30";
-                const colorClass = val === 'RD' ? 'bg-orange-500 text-white' : 
-                                (val === 'SLWOP' || val === 'VLWOP' ? 'bg-red-600 text-white' : '');
+                
+                // Tentukan class warna untuk latar belakang penuh
+                let colorClass = "";
+                if (val === 'RD') {
+                    colorClass = "bg-orange-500 text-white";
+                } else if (val === 'SLWOP' || val === 'VLWOP') {
+                    colorClass = "bg-red-600 text-white";
+                }
 
                 return `
-                <td class="p-1 border text-center relative" id="cell-${staff.name}-${i+1}">
-                    <span class="jadwal-text font-bold ${colorClass}" id="text-${staff.name}-${tglKey}">${val}</span>
+                <td class="p-0 border text-center relative h-10 w-12" id="cell-${staff.name}-${i+1}">
+                    <div class="w-full h-full flex items-center justify-center font-bold ${colorClass}" id="text-${staff.name}-${tglKey}">
+                        ${val}
+                    </div>
                     ${isAdmin ? `
-                        <select class="jadwal-edit hidden w-full p-1 border" 
+                        <select class="jadwal-edit hidden w-full h-full text-center" 
                                 id="select-${staff.name}-${tglKey}"
                                 onchange="saveAndUpdate('${staff.name}', '${tglKey}', this)">
                             ${['18:30', 'RD', 'SL', 'SLWOP', 'VL', 'VLWOP'].map(opt => 
@@ -925,8 +933,8 @@ async function loadJadwal() {
             // Kolom Aksi
             if (isAdmin) {
                 rowHtml += `<td class="p-2 border text-center">
-                    <button onclick="enableEditMode('${staff.name}', this)" class="text-xl">✏️</button>
-                </td>`;
+                        <button onclick="enableEditMode('${staff.name}', this)" class="text-xl">✏️</button>
+                    </td>`;
             }
             
             row.innerHTML = rowHtml;
