@@ -868,8 +868,6 @@ async function loadJadwal() {
     const jadwalSnapshot = await database.ref(`jadwal/${bulan}`).once('value');
     const jadwalData = jadwalSnapshot.val() || {};
 
-    const isLocked = isBulanTerkunci(bulan);
-
     container.innerHTML = ""; 
 
     const staffByWeb = {};
@@ -922,7 +920,7 @@ async function loadJadwal() {
             // Kolom Tanggal
             rowHtml += Array.from({length: daysInMonth}, (_, i) => {
                 const tglKey = `tgl_${i+1}`;
-                const val = jadwalData[staff.name]?.[tglKey] || "06:30";
+                const val = jadwalData[staff.name]?.[tglKey] || "18:30";
                 
                 // 1. Logika Warna (tambahkan juga untuk HALF & 06:30 jika mau)
                 let colorClass = "";
@@ -946,8 +944,8 @@ async function loadJadwal() {
                     ${isAdmin ? `
                         <select class="jadwal-edit hidden w-full h-full text-center" 
                             id="select-${staff.name}-tgl_${i+1}" 
-                            onchange="saveAndUpdate('${staff.name}', '${tglKey}', this)"
-                            ${isLocked ? 'disabled' : ''}>  ${['18:30', '06:30', 'HALF', 'RD', 'SL', 'SLWOP', 'VL', 'VLWOP'].map(opt => 
+                            onchange="saveAndUpdate('${staff.name}', '${tglKey}', this)">
+                            ${['18:30', '06:30', 'HALF', 'RD', 'SL', 'SLWOP', 'VL', 'VLWOP'].map(opt => 
                                 `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
                         </select>
                     ` : ''}
@@ -1018,24 +1016,10 @@ function updateCellColor(selectElement, idKey) {
 
 function saveAndUpdate(nama, tglKey, selectElement) {
     const bulan = document.getElementById('filter-jadwal-bulan').value;
-
-    // Proteksi tambahan: Cek sekali lagi sebelum simpan
-    if (isBulanTerkunci(bulan)) {
-        alert("Data bulan lalu tidak dapat diubah!");
-        location.reload(); // Refresh untuk mengembalikan status
-        return;
-    }
-
     const val = selectElement.value;
-
-    const currentShift = "Pagi";
     
     // Simpan ke Firebase
-    database.ref(`jadwal/${bulan}/${nama}/${tglKey}`).set({
-        value: val,
-        shiftSnapshot: currentShift, // Menyimpan "foto" shift saat ini
-        updatedAt: new Date().toISOString()
-    });
+    database.ref(`jadwal/${bulan}/${nama}/${tglKey}`).set(val);
 
     // Cari elemen berdasarkan ID
     const textDiv = document.getElementById(`text-${nama}-${tglKey}`);
@@ -1129,13 +1113,4 @@ function editStaffOnline(staffId) {
             alert("Gagal update: " + err.message);
         });
     });
-}
-
-function isBulanTerkunci(targetBulan) {
-    // targetBulan formatnya "YYYY-MM"
-    const sekarang = new Date();
-    const bulanSekarang = sekarang.toISOString().slice(0, 7); // "2026-06"
-    
-    // Jika bulan yang dipilih lebih kecil dari bulan sekarang, maka kunci!
-    return targetBulan < bulanSekarang;
 }
