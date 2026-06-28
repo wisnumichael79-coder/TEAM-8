@@ -949,19 +949,15 @@ async function loadJadwal() {
 function enableEditMode(staffName, btn) {
     const row = btn.closest('tr');
     
-    // 1. Sembunyikan semua div teks
-    const textDivs = row.querySelectorAll('.jadwal-text');
-    textDivs.forEach(div => div.classList.add('hidden'));
+    // Sembunyikan teks, tampilkan dropdown
+    row.querySelectorAll('.jadwal-text').forEach(div => div.classList.add('hidden'));
+    row.querySelectorAll('.jadwal-edit').forEach(sel => sel.classList.remove('hidden'));
     
-    // 2. Tampilkan semua select
-    const selects = row.querySelectorAll('.jadwal-edit');
-    selects.forEach(sel => sel.classList.remove('hidden'));
+    // Ubah ikon menjadi ikon "Selesai/Simpan"
+    btn.innerHTML = '✅';
     
-    // 3. Ubah tombol pensil menjadi tombol simpan yang aman
-    // Gunakan type="button" agar tidak me-refresh halaman
-    btn.innerHTML = '✅'; 
-    btn.setAttribute('onclick', 'location.reload()'); // Atau hilangkan ini jika ingin manual
-    btn.setAttribute('type', 'button'); 
+    // Ganti fungsi klik agar berubah menjadi mode "Selesai Edit" (tidak reload)
+    btn.setAttribute('onclick', `disableEditMode('${staffName}', this)`);
 }
 
 function toggleEdit(idKey) {
@@ -998,14 +994,32 @@ function updateCellColor(selectElement, idKey) {
 
 function saveAndUpdate(nama, tglKey, selectElement) {
     const bulan = document.getElementById('filter-jadwal-bulan').value;
-    database.ref(`jadwal/${bulan}/${nama}/${tglKey}`).set(selectElement.value);
-
     const val = selectElement.value;
-    const textSpan = document.getElementById(`text-${nama}-${tglKey}`);
-    textSpan.innerText = val;
     
-    // Reset dan atur warna
-    textSpan.className = "jadwal-text font-bold p-1 block";
-    if (val === 'RD') textSpan.classList.add('bg-orange-500', 'text-white');
-    else if (val === 'SLWOP' || val === 'VLWOP') textSpan.classList.add('bg-red-600', 'text-white');
+    // Simpan ke Firebase
+    database.ref(`jadwal/${bulan}/${nama}/${tglKey}`).set(val);
+
+    // Update tampilan teks di div
+    const textDiv = document.getElementById(`text-${nama}-${tglKey}`);
+    textDiv.innerText = val;
+    
+    // Reset dan atur warna latar belakang penuh
+    textDiv.className = "jadwal-text w-full h-full flex items-center justify-center font-bold";
+    
+    if (val === 'RD') textDiv.classList.add('bg-orange-500', 'text-white');
+    else if (val === 'SLWOP' || val === 'VLWOP') textDiv.classList.add('bg-red-600', 'text-white');
+    else if (val === 'HALF') textDiv.classList.add('bg-yellow-500', 'text-black');
+    else if (val === '06:30') textDiv.classList.add('bg-blue-500', 'text-white');
+}
+
+function disableEditMode(staffName, btn) {
+    const row = btn.closest('tr');
+    
+    // Sembunyikan dropdown, tampilkan kembali teks
+    row.querySelectorAll('.jadwal-edit').forEach(sel => sel.classList.add('hidden'));
+    row.querySelectorAll('.jadwal-text').forEach(div => div.classList.remove('hidden'));
+    
+    // Kembalikan ikon ke pensil
+    btn.innerHTML = '✏️';
+    btn.setAttribute('onclick', `enableEditMode('${staffName}', this)`);
 }
