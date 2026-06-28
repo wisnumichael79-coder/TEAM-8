@@ -906,24 +906,25 @@ async function loadJadwal() {
                 const tglKey = `tgl_${i+1}`;
                 const val = jadwalData[staff.name]?.[tglKey] || "18:30";
                 
-                // Tentukan class warna untuk latar belakang penuh
+                // 1. Logika Warna (tambahkan juga untuk HALF & 06:30 jika mau)
                 let colorClass = "";
-                if (val === 'RD') {
-                    colorClass = "bg-orange-500 text-white";
-                } else if (val === 'SLWOP' || val === 'VLWOP') {
-                    colorClass = "bg-red-600 text-white";
-                }
+                if (val === 'RD') colorClass = "bg-orange-500 text-white";
+                else if (val === 'SLWOP' || val === 'VLWOP') colorClass = "bg-red-600 text-white";
+                else if (val === 'HALF') colorClass = "bg-yellow-500 text-black";
+                else if (val === '06:30') colorClass = "bg-blue-500 text-white";
+
+                // 2. Definisikan opsi di sini
+                const options = ['18:30', '06:30', 'HALF', 'RD', 'SL', 'SLWOP', 'VL', 'VLWOP'];
 
                 return `
-                <td class="p-0 border text-center relative h-10 w-12" id="cell-${staff.name}-${i+1}">
-                    <div class="w-full h-full flex items-center justify-center font-bold ${colorClass}" id="text-${staff.name}-${tglKey}">
+                <td class="p-0 border text-center relative h-10 w-12">
+                    <div class="w-full h-full flex items-center justify-center font-bold ${colorClass}">
                         ${val}
                     </div>
                     ${isAdmin ? `
                         <select class="jadwal-edit hidden w-full h-full text-center" 
-                                id="select-${staff.name}-${tglKey}"
                                 onchange="saveAndUpdate('${staff.name}', '${tglKey}', this)">
-                            ${['18:30', 'RD', 'SL', 'SLWOP', 'VL', 'VLWOP'].map(opt => 
+                            ${options.map(opt => 
                                 `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
                         </select>
                     ` : ''}
