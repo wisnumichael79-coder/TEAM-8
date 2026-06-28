@@ -873,30 +873,34 @@ async function loadJadwal() {
         staffs.forEach(staff => {
             const row = document.createElement('tr');
             
-            // Kolom Nama
+            // Header Nama
             let rowHtml = `<td class="p-2 border font-bold">${staff.name}</td>`;
             
             // Kolom Tanggal
             rowHtml += Array.from({length: daysInMonth}, (_, i) => {
                 const tglKey = `tgl_${i+1}`;
                 const val = jadwalData[staff.name]?.[tglKey] || "18:30";
+                const colorClass = val === 'RD' ? 'bg-orange-500 text-white' : 
+                                (val === 'SLWOP' || val === 'VLWOP' ? 'bg-red-600 text-white' : '');
+
                 return `
-                <td class="p-1 border text-center relative" id="cell-${staff.name}-${tglKey}">
-                    <span class="jadwal-text font-bold" id="text-${staff.name}-${tglKey}">${val}</span>
-                    <select class="jadwal-edit hidden w-full p-1 border" 
-                            id="select-${staff.name}-${tglKey}"
-                            onchange="updateJadwal('${staff.name}', '${tglKey}', this.value); updateCellColor(this, '${staff.name}-${tglKey}')">
+                <td class="p-1 border text-center relative" id="cell-${staff.name}-${i+1}">
+                    <span class="jadwal-text font-bold ${colorClass}" id="text-${staff.name}-${tglKey}">${val}</span>
+                    ${isAdmin ? `
+                        <select class="jadwal-edit hidden w-full p-1 border" 
+                                id="select-${staff.name}-${tglKey}"
+                                onchange="saveAndUpdate('${staff.name}', '${tglKey}', this)">
+                            ${['18:30', 'RD', 'SL', 'SLWOP', 'VL', 'VLWOP'].map(opt => 
+                                `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
                         </select>
+                    ` : ''}
                 </td>`;
             }).join('');
 
-            // Kolom Pensil (Admin)
+            // Kolom Aksi
             if (isAdmin) {
-                rowHtml += `
-                <td class="p-2 border text-center">
-                    <button onclick="enableEditMode('${staff.name}', this)" class="text-xl">
-                        ✏️
-                    </button>
+                rowHtml += `<td class="p-2 border text-center">
+                    <button onclick="enableEditMode('${staff.name}', this)" class="text-xl">✏️</button>
                 </td>`;
             }
             
@@ -908,9 +912,9 @@ async function loadJadwal() {
 
 // Fungsi pendukung edit
 function enableEditMode(staffName, btn) {
-    const isEditing = btn.innerText === "💾"; // Jika ikon saat ini adalah disket
+    const isEditing = btn.innerText === "💾";
     
-    // Toggle elemen: Tampilkan/Sembunyikan dropdown & teks
+    // Toggle dropdown dan teks
     document.querySelectorAll(`[id^="select-${staffName}-"]`).forEach(el => {
         el.classList.toggle('hidden');
     });
@@ -918,7 +922,6 @@ function enableEditMode(staffName, btn) {
         el.classList.toggle('hidden');
     });
 
-    // Ubah ikon pensil jadi disket (save) dan sebaliknya
     btn.innerText = isEditing ? "✏️" : "💾";
 }
 
@@ -952,4 +955,20 @@ function updateCellColor(selectElement, idKey) {
         // Warna default (untuk 18:30, SL, VL)
         textSpan.classList.add('text-slate-900');
     }
+}
+
+function saveAndUpdate(nama, tglKey, selectElement) {
+    // 1. Simpan ke Firebase
+    const bulan = document.getElementById('filter-jadwal-bulan').value;
+    database.ref(`jadwal/${bulan}/${nama}/${tglKey}`).set(selectElement.value);
+
+    // 2. Update tampilan warna langsung
+    const val = selectElement.value;
+    const textSpan = document.getElementById(`text-${nama}-${tglKey}`);
+    textSpan.innerText = val;
+    
+    // Reset warna
+    textSpan.className = "jadwal-text font-bold p-1 block";
+    if (val === 'RD') textSpan.classList.add('bg-orange-500', 'text-white');
+    else if (val === 'SLWOP' || val === 'VLWOP') textSpan.classList.add('bg-red-600', 'text-white');
 }
