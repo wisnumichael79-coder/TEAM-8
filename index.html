@@ -20,14 +20,23 @@
             color: white;
             padding: 8px;
             font-weight: bold;
-            width: 100%; /* Atau width: fit-content; jika ingin header mengikuti lebar tabel */
+            /* Ganti width: 100% menjadi: */
+            display: inline-block; 
+            min-width: 100%; /* Memastikan dia minimal selebar layar */
+            box-sizing: border-box;
         }
+
         .table-responsive-wrapper {
             width: 100%;
             overflow-x: auto;
+            /* Tambahkan ini agar tidak ada celah antara header dan tabel */
+            display: block; 
         }
+
         table {
+            width: 100%;
             min-width: 1200px;
+            border-collapse: collapse;
         }
     </style>
 </head>
