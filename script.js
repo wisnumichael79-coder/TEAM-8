@@ -883,10 +883,18 @@ async function loadJadwal() {
         wrapper.className = "mb-8 w-full";
         wrapper.innerHTML = `
             <div class="web-header">${webName}</div>
-            <div class="table-responsive-wrapper">
-                <table class="text-sm border border-slate-300">
-                    </table>
-            </div>
+            <table class="min-w-max w-full text-sm border-collapse border border-slate-300">
+                <thead class="bg-slate-100">
+                    <tr>
+                        <th class="p-2 border">NAMA</th>
+                        <th class="p-2 border">STATUS</th>
+                        <th class="p-2 border">SHIFT</th>
+                        ${Array.from({length: daysInMonth}, (_, i) => `<th class="p-1 border">${i+1}</th>`).join('')}
+                        ${isAdmin ? '<th class="p-2 border">AKSI</th>' : ''}
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         `;
         container.appendChild(wrapper);
         
@@ -914,7 +922,7 @@ async function loadJadwal() {
             let rowHtml = `
                 <td class="p-2 border font-bold">${staff.name}</td>
                 <td class="p-2 border text-center">${staff.role || '-'}</td>
-                <td class="p-2 border text-center font-semibold text-blue-600">${staff.shift || '-'}</td>
+                <td class="p-2 border text-center">${staff.shift || '-'}</td>
             `;
             
             // Kolom Tanggal
@@ -939,7 +947,7 @@ async function loadJadwal() {
                     else if (val === 'HALF') colorClass = "bg-yellow-500 text-black";
                     else if (val === '06:30') colorClass = "bg-blue-500 text-white";
                 }
-                
+
                 return `
                 <td class="p-0 border text-center relative h-10 w-12">
                     <div class="jadwal-text w-full h-full flex items-center justify-center font-bold ${colorClass}"
