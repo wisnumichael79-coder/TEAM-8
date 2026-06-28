@@ -909,7 +909,9 @@ async function loadJadwal() {
                 // 1. Logika Warna (tambahkan juga untuk HALF & 06:30 jika mau)
                 let colorClass = "";
                 if (val === 'RD') colorClass = "bg-orange-500 text-white";
-                else if (val === 'SLWOP' || val === 'VLWOP') colorClass = "bg-red-600 text-white";
+                else if (val === 'SL' || val === 'SLWOP' || val === 'VLWOP') colorClass = "bg-red-600 text-white";
+                else if (val === 'VL') colorClass = "bg-purple-600 text-white";
+                else if (val === '18:30') colorClass = "bg-green-600 text-white";
                 else if (val === 'HALF') colorClass = "bg-yellow-500 text-black";
                 else if (val === '06:30') colorClass = "bg-blue-500 text-white";
 
@@ -1014,10 +1016,19 @@ function saveAndUpdate(nama, tglKey, selectElement) {
         textDiv.className = "jadwal-text w-full h-full flex items-center justify-center font-bold";
         
         // Atur warna
-        if (val === 'RD') textDiv.classList.add('bg-orange-500', 'text-white');
-        else if (val === 'SLWOP' || val === 'VLWOP') textDiv.classList.add('bg-red-600', 'text-white');
-        else if (val === 'HALF') textDiv.classList.add('bg-yellow-500', 'text-black');
-        else if (val === '06:30') textDiv.classList.add('bg-blue-500', 'text-white');
+        if (val === 'RD') {
+            textDiv.classList.add('bg-orange-500', 'text-white');
+        } else if (val === 'SL' || val === 'SLWOP' || val === 'VLWOP') {
+            textDiv.classList.add('bg-red-600', 'text-white'); // Merah untuk SL, SLWOP, VLWOP
+        } else if (val === 'VL') {
+            textDiv.classList.add('bg-purple-600', 'text-white'); // Ungu untuk VL
+        } else if (val === '18:30') {
+            textDiv.classList.add('bg-green-600', 'text-white'); // Hijau untuk 18:30
+        } else if (val === 'HALF') {
+            textDiv.classList.add('bg-yellow-500', 'text-black');
+        } else if (val === '06:30') {
+            textDiv.classList.add('bg-blue-500', 'text-white');
+        }
     } else {
         console.warn(`Elemen text-${nama}-${tglKey} tidak ditemukan!`);
     }
